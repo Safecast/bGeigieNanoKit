@@ -71,7 +71,16 @@ static const int resetOpenLog = 9; //This pin resets OpenLog. Connect pin 9 to p
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
 #define GPS_INTERVAL 1000
+char gps_status = VOID;
 static const int ledPin = 13;
+
+// Gps data buffers
+static char lat[BUFFER_SZ];
+static char lon[BUFFER_SZ];
+static char alt[BUFFER_SZ];
+static char spd[BUFFER_SZ];
+static char sat[BUFFER_SZ];
+static char pre[BUFFER_SZ];
 
 // Global definitions ---------------------------------------------------------
 unsigned long cpm_gen();
@@ -260,20 +269,16 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 {
   int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
-  float flat = 0, flon = 0, faltitude = 0;
+  float flat = 0, flon = 0, faltitude = 0, fspeed = 0;
   unsigned short nbsat = 0;
   unsigned long precission = 0;
   unsigned long age;
   byte len;
 
-  char lat[BUFFER_SZ];
-  char lon[BUFFER_SZ];
-  char alt[BUFFER_SZ];
-  char sat[BUFFER_SZ];
-  char pre[BUFFER_SZ];
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
   memset(alt, 0, BUFFER_SZ);
+  memset(spd, 0, BUFFER_SZ);
   memset(sat, 0, BUFFER_SZ);
   memset(pre, 0, BUFFER_SZ);
   
@@ -282,19 +287,27 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
   gps.f_get_position(&flat, &flon, &age);
+  if (TinyGPS::GPS_INVALID_AGE == age) {
+    gps_status = VOID;
+  } else {
+    gps_status = AVAILABLE;
+  }
+  
   faltitude = gps.f_altitude();
+  fspeed = gps.f_speed_kmph();
   nbsat = gps.satellites();
   precission = gps.hdop();
 
   dtostrf(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 0, 6, lat);
   dtostrf(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 0, 6, lon);
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, alt);
+  dtostrf(fspeed == TinyGPS::GPS_INVALID_F_SPEED ? 0.0 : fspeed, 0, 2, spd);
   sprintf(sat, "%d", nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
   sprintf(pre, "%ld", precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
   
   memset(buf, 0, LINE_SZ);
 
-  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%s,%s,%s,%s",  \
+  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%s,%s,%s,%c,%s,%s",  \
               hdr, \
               dev_id, \
               year, month, day,  \
@@ -306,6 +319,8 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
               lat,\
               lon, \
               alt, \
+              spd, \
+              gps_status, \
               sat, \
               pre);
 
