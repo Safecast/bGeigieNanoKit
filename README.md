@@ -1,6 +1,6 @@
 # Welcome to bGeigie Nano
 
-This is a lighter version of bGeigie Mini which is meant to fix in a Pelican 1040.
+This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1040.
 
 # Requirements
 * Arduino Fio
