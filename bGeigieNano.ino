@@ -99,6 +99,10 @@ void setup()
   pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
 
+  // enable and reset the watchdog timer
+  wdt_enable(WDTO_8S);
+  wdt_reset();
+
   setupOpenLog(); //Resets logger and waits for the '<' I'm alive character
 
   // print header to serial
@@ -144,6 +148,9 @@ void loop()
   {
       unsigned long cpm=0, cpb=0;
       byte line_len;
+
+      // first, reset the watchdog timer
+      wdt_reset();
 
       // obtain the count in the last bin
       cpb = interruptCounterCount();
