@@ -255,7 +255,7 @@ unsigned long cpm_gen()
 
 byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
-  int year = 0;
+  int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   float flat = 0, flon = 0, faltitude = 0;
   unsigned short nbsat = 0;
@@ -276,22 +276,22 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
-    year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
+    year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
   gps.f_get_position(&flat, &flon, &age);
   faltitude = gps.f_altitude();
   nbsat = gps.satellites();
   precission = gps.hdop();
 
-  dtostrf(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 0, 9, lat);
-  dtostrf(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 0, 9, lon);
+  dtostrf(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 0, 6, lat);
+  dtostrf(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 0, 6, lon);
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, alt);
   sprintf(sat, "%d", nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
   sprintf(pre, "%ld", precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
   
   memset(buf, 0, LINE_SZ);
 
-  sprintf(buf, "$%s,%d,20%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%s,%s,%s,%s",  \
+  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%s,%s,%s,%s",  \
               hdr, \
               dev_id, \
               year, month, day,  \
