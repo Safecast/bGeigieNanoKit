@@ -70,6 +70,7 @@ static const int resetOpenLog = 9; //This pin resets OpenLog. Connect pin 9 to p
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
+#define GPS_INTERVAL 1000
 static const int ledPin = 13;
 
 // Global definitions ---------------------------------------------------------
@@ -112,7 +113,7 @@ void loop()
   bool gpsReady = false;
   
   // For one second we parse GPS data and report some key values
-  for (unsigned long start = millis(); millis() - start < 1000;)
+  for (unsigned long start = millis(); millis() - start < GPS_INTERVAL;)
   {
     while (Serial.available())
     {
@@ -123,13 +124,17 @@ void loop()
     }
   }
   
+  if (gpsReady) {
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+  
   // generate CPM every TIME_INTERVAL seconds
   if (interruptCounterAvailable())
   {
       unsigned long cpm=0, cpb=0;
       byte line_len;
-      
-      if (gpsReady) digitalWrite(ledPin, HIGH);
 
       // obtain the count in the last bin
       cpb = interruptCounterCount();
@@ -167,8 +172,6 @@ void loop()
       Serial.println(line);
 #endif
       OpenLog.println(line);
-      
-      if (gpsReady) digitalWrite(ledPin, LOW);
   }
 }
 
