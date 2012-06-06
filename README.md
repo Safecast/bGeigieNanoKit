@@ -7,8 +7,10 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * [OpenLog][1]
 * [GPSBee][2]
 * [Inspector Alert][3] (with audio jack connector)
-* Lithium battery
+* Lithium battery (3.7V 850mAh)
 * [Pelican Micro Case 1040][4]
+
+![bGeigieNano](https://bitbucket.org/lbergeret/bgeigienano/raw/89f6a92e662f/assembly/bGeigieNano_bb.jpg)
 
 # Extensions (optional)
 * Solar panel
