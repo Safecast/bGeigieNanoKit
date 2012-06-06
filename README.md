@@ -1,4 +1,4 @@
-# Welcome to bGeigie Nano
+# Welcome to bGeigie Nano project
 
 This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1040.
 
@@ -7,7 +7,7 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * [OpenLog][1]
 * [GPSBee][2]
 * [Inspector Alert][3] (with audio jack connector)
-* Lithium battery (3.7V 850mAh)
+* 3.7V 850mAh Lithium battery (*~15 hours logging*)
 * [Pelican Micro Case 1040][4]
 
 ![bGeigieNano](https://bitbucket.org/lbergeret/bgeigienano/raw/89f6a92e662f/assembly/bGeigieNano_bb.jpg)
@@ -25,7 +25,7 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
     make upload
 
 ## Using the prebuilt image
-You can use directly the prebuilt image to flash the Arduino Fio. Here is an example when Arduino Fio is connected to ttyUSB0:
+You can use directly the prebuilt image to flash the Arduino Fio. Here is an example with Arduino Fio connected to ttyUSB0:
 
     /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
 
