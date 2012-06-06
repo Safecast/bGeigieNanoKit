@@ -30,7 +30,6 @@
 */
 
 #include <limits.h>
-#include <EEPROM.h>
 #include <SoftwareSerial.h>
 #include <math.h>
 #include <stdlib.h>
