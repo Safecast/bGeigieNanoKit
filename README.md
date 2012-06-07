@@ -27,11 +27,13 @@ The total current used at run time can be estimated around 56mA (= 6+6+44) per s
 the total log duration if using a battery of 850mAh will be (850/.0155)/3600 = 15.17 = 15h10m
 
 ## Summary table
-|	Battery capacity (mAh)	|	Estimated log duration (days hh:mm)	|
-|	850	|	0d 15:10	|
-|	1000	|	0d 17:51	|
-|	2000	|	1d 11:42	|
-|	6000	|	4d 11:08	|
+
+| Battery capacity (mAh) | Estimated log duration (days hh:mm) |
+| :-----------: | :-----------: |
+| 850 |	0d 15:10 |
+| 1000 | 0d 17:51 |
+| 2000 | 1d 11:42 |
+| 6000 | 4d 11:08 |
 
 # Build process
 ## Using the Makefile
