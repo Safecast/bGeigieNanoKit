@@ -16,6 +16,44 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * Solar panel
 * Serial LCD Display
 
+# Power consumption
+
+## Estimation
+* **Fio**: 0.045mA sleep, 6mA at run time
+* **OpenLog**: 2mA idle, 6mA at maximum recording rate
+* **GPSBee**: 102mA acquisition, 44mA tracking
+
+The total current used at run time can be estimated around 56mA (= 6+6+44) per second which will result in a consumption of 0.0155mAh (= 56mA/3600). So
+the total log duration if using a battery of 850mAh will be (850/.0155)/3600 = 15.17 = 15h10m
+
+## Summary table
+<table>
+  <thead>
+    <tr>
+      <th>Battery capacity (mAh)</th>
+      <th>Estimated log duration (days hh:mm)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>850</td>
+      <td>0d 15:10</td>
+    </tr>
+    <tr>
+      <td>1000</td>
+      <td>0d 17:51</td>
+    </tr>
+    <tr>
+      <td>2000</td>
+      <td>1d 11:42</td>
+    </tr>
+    <tr>
+      <td>6000</td>
+      <td>4d 11:08</td>
+    </tr>
+  </tbody>
+</table>
+
 # Build process
 ## Using the Makefile
     export ARDUINODIR=/home/geigie/arduino-1.0.1/
