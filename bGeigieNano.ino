@@ -137,6 +137,10 @@ void setup()
   // And now Start the Pulse Counter!
   interruptCounterReset();
 #endif
+
+#ifdef USE_MINIPRO
+  gpsSerial.begin(9600);
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -158,6 +162,7 @@ void loop()
     {
       char c = Serial.read();
 #endif
+
       // OpenLog.write(c); // uncomment this line if you want to see the GPS data flowing
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
