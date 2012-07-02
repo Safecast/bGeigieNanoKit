@@ -37,6 +37,20 @@
 #include "TinyGPS.h"
 #include "InterruptCounter.h"
 
+// Definition flags -----------------------------------------------------------
+#define USE_MINIPRO // use software serial for GPS
+#define USE_COUNTER
+#define DEBUG_LOG
+
+// PINs definition ------------------------------------------------------------
+#define MINIPRO_GPS_RX_PIN 5
+#define MINIPRO_GPS_TX_PIN 6
+#define OPENLOG_RX_PIN 7
+#define OPENLOG_TX_PIN 8
+#define OPENLOG_RST_PIN 9
+#define GPS_LED_PIN 13
+#define COUNTER_INTERRUPT 0 // 0 = dpin2, 1 = dpin3
+
 // Geiger settings ------------------------------------------------------------
 #define TIME_INTERVAL 5000
 #define LINE_SZ 100
@@ -60,18 +74,22 @@ char geiger_status = VOID;
 static char line[LINE_SZ];
 
 // geiger id and interrupt
-static const int interruptPin = 0; // 0 = pin2, 1= pin3
+static const int interruptPin = COUNTER_INTERRUPT; // 0 = pin2, 1= pin3
 static const int dev_id = 1;
 
 // OpenLog settings -----------------------------------------------------------
-SoftwareSerial OpenLog(8, 7); //Connect TXO of OpenLog to pin 8, RXI to pin 7
-static const int resetOpenLog = 9; //This pin resets OpenLog. Connect pin 9 to pin GRN on OpenLog.
+SoftwareSerial OpenLog(OPENLOG_RX_PIN, OPENLOG_TX_PIN); //Connect TXO of OpenLog to pin 8, RXI to pin 7
+static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Connect pin 9 to pin GRN on OpenLog.
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
 #define GPS_INTERVAL 1000
 char gps_status = VOID;
-static const int ledPin = 13;
+static const int ledPin = GPS_LED_PIN;
+
+#ifdef USE_MINIPRO
+SoftwareSerial gpsSerial(MINIPRO_GPS_RX_PIN, MINIPRO_GPS_TX_PIN);
+#endif
 
 // Gps data buffers
 static char lat[BUFFER_SZ];
@@ -81,14 +99,12 @@ static char spd[BUFFER_SZ];
 static char sat[BUFFER_SZ];
 static char pre[BUFFER_SZ];
 
-// Global definitions ---------------------------------------------------------
+// Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
 byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
 void setupOpenLog(void);
 void createFile(char *fileName);
 void gotoCommandMode(void);
-
-//#define DEBUG_LOG
 
 // ----------------------------------------------------------------------------
 // Setup
@@ -101,6 +117,10 @@ void setup()
   // enable and reset the watchdog timer
   wdt_enable(WDTO_8S);
   wdt_reset();
+  
+#ifdef DEBUG_LOG
+  Serial.println("Initializing OpenLog.");
+#endif
 
   setupOpenLog(); //Resets logger and waits for the '<' I'm alive character
 
@@ -110,11 +130,13 @@ void setup()
 #endif
   OpenLog.print(fileHeader);
 
-  // Create pulse counter on INT2
+#ifdef USE_COUNTER
+  // Create pulse counter on INT1
   interruptCounterSetup(interruptPin, TIME_INTERVAL);
 
   // And now Start the Pulse Counter!
   interruptCounterReset();
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -127,9 +149,15 @@ void loop()
   // For one second we parse GPS data and report some key values
   for (unsigned long start = millis(); millis() - start < GPS_INTERVAL;)
   {
+#ifdef USE_MINIPRO
+    while (gpsSerial.available())
+    {
+      char c = gpsSerial.read();
+#else
     while (Serial.available())
     {
       char c = Serial.read();
+#endif
       // OpenLog.write(c); // uncomment this line if you want to see the GPS data flowing
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
@@ -151,11 +179,15 @@ void loop()
       // first, reset the watchdog timer
       wdt_reset();
 
+#ifdef USE_COUNTER
       // obtain the count in the last bin
       cpb = interruptCounterCount();
 
       // reset the pulse counter
       interruptCounterReset();
+#else
+      cpb = 15;
+#endif
 
       // insert count in sliding window and compute CPM
       shift_reg[reg_index] = cpb;     // put the count in the correct bin
