@@ -169,7 +169,7 @@ void loop()
       char c = Serial.read();
 #endif
 
-      // OpenLog.write(c); // uncomment this line if you want to see the GPS data flowing
+      //Serial.print(c); // uncomment this line if you want to see the GPS data flowing
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
     }
@@ -330,6 +330,15 @@ unsigned long cpm_gen()
    return c_p_m;
 }
 
+/* Convert a coordinate from Degrees to DegreesMinutes (NMEA) */
+void convertGPStoNMEA(double coordinate, char *buf) {
+    double Degrees          = ( int )coordinate;   
+    double Minutes          = coordinate - Degrees;     
+    double DegreesMinutes   = Minutes * 60 + ( Degrees * 10 * 10 );   
+
+    dtostrf(DegreesMinutes, 0, 4, buf); // 4 decimal places
+}
+
 /* generate log result line */
 byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
@@ -340,6 +349,8 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   unsigned long precission = 0;
   unsigned long age;
   byte len, chk;
+  char NS = 'N';
+  char WE = 'E';
 
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
@@ -364,8 +375,11 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   nbsat = gps.satellites();
   precission = gps.hdop();
 
-  dtostrf(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 0, 6, lat);
-  dtostrf(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 0, 6, lon);
+  convertGPStoNMEA(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, lat);
+  convertGPStoNMEA(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, lon);
+  if (flat < 0) NS = 'S';
+  if (flon < 0) WE = 'W';
+
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, alt);
   dtostrf(fspeed == TinyGPS::GPS_INVALID_F_SPEED ? 0.0 : fspeed, 0, 2, spd);
   sprintf(sat, "%d", nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
@@ -373,7 +387,7 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   
   memset(buf, 0, LINE_SZ);
 
-  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%s,%s,%s,%c,%s,%s",  \
+  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%s,%s",  \
               hdr, \
               dev_id, \
               year, month, day,  \
@@ -382,13 +396,12 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
               cpb, \
               total_count, \
               geiger_status, \
-              lat,\
-              lon, \
+              lat, NS,\
+              lon, WE,\
               alt, \
-              spd, \
               gps_status, \
-              sat, \
-              pre);
+              pre, \
+              sat);
 
    len = strlen(buf);
    buf[len] = '\0';
