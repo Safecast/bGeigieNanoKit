@@ -40,6 +40,7 @@
 // Definition flags -----------------------------------------------------------
 #define USE_MINIPRO // use software serial for GPS
 #define USE_COUNTER
+#define USE_OPENLOG // disable for debugging
 #define DEBUG_LOG
 
 // PINs definition ------------------------------------------------------------
@@ -78,8 +79,10 @@ static const int interruptPin = COUNTER_INTERRUPT; // 0 = pin2, 1= pin3
 static const int dev_id = 1;
 
 // OpenLog settings -----------------------------------------------------------
+#ifdef USE_OPENLOG
 SoftwareSerial OpenLog(OPENLOG_RX_PIN, OPENLOG_TX_PIN); //Connect TXO of OpenLog to pin 8, RXI to pin 7
 static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Connect pin 9 to pin GRN on OpenLog.
+#endif
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
@@ -118,6 +121,7 @@ void setup()
   wdt_enable(WDTO_8S);
   wdt_reset();
   
+#ifdef USE_OPENLOG
 #ifdef DEBUG_LOG
   Serial.println("Initializing OpenLog.");
 #endif
@@ -125,10 +129,12 @@ void setup()
   setupOpenLog(); //Resets logger and waits for the '<' I'm alive character
 
   // print header to serial
+  OpenLog.print(fileHeader);
+#endif
+
 #ifdef DEBUG_LOG
   Serial.print(fileHeader);
 #endif
-  OpenLog.print(fileHeader);
 
 #ifdef USE_COUNTER
   // Create pulse counter on INT1
@@ -223,14 +229,16 @@ void loop()
 #ifdef DEBUG_LOG
       Serial.println(line);
 #endif
+#ifdef USE_OPENLOG
       OpenLog.println(line);
+#endif
   }
 }
 
 // ----------------------------------------------------------------------------
 // Utility functions
 // ----------------------------------------------------------------------------
-
+#ifdef USE_OPENLOG
 //Setups up the software serial, resets OpenLog so we know what state it's in, and waits
 //for OpenLog to come online and report '<' that it is ready to receive characters to record
 void setupOpenLog(void) {
@@ -295,7 +303,21 @@ void gotoCommandMode(void) {
       if(OpenLog.read() == '>') break;
   }
 }
+#endif
 
+/* compute check sum of N bytes in array s */
+char checksum(char *s, int N)
+{
+  int i = 0;
+  char chk = s[0];
+
+  for (i=1 ; i < N ; i++)
+    chk ^= s[i];
+
+  return chk;
+}
+
+/* compute cpm */
 unsigned long cpm_gen()
 {
    unsigned int i;
@@ -308,6 +330,7 @@ unsigned long cpm_gen()
    return c_p_m;
 }
 
+/* generate log result line */
 byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
   int year = 2012;
@@ -316,7 +339,7 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   unsigned short nbsat = 0;
   unsigned long precission = 0;
   unsigned long age;
-  byte len;
+  byte len, chk;
 
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
@@ -370,6 +393,14 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    len = strlen(buf);
    buf[len] = '\0';
 
+   // generate checksum
+   chk = checksum(buf+1, len);
+
+   // add checksum to end of line before sending
+   if (chk < 16)
+     sprintf(buf + len, "*0%X", (int)chk);
+   else
+     sprintf(buf + len, "*%X", (int)chk);
+
    return len;
 }
-
