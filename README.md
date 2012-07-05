@@ -3,18 +3,33 @@
 This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1040.
 
 # Requirements
-* Arduino Fio
+* Arduino Fio or Arduino Pro Mini
 * [OpenLog][1]
-* [GPSBee][2]
+* [GPSBee][2] or Adafruit [Ultimate GPS][7]
 * [Inspector Alert][3] (with audio jack connector)
 * 3.7V 850mAh Lithium battery (*~15 hours logging*)
 * [Pelican Micro Case 1040][4]
 
-![bGeigieNano](https://bitbucket.org/lbergeret/bgeigienano/raw/89f6a92e662f/assembly/bGeigieNano_bb.jpg)
-
 # Extensions (optional)
 * Solar panel
 * Serial LCD Display
+
+# Assembly
+
+![bGeigieNano](https://github.com/bidouilles/bGeigieNano/raw/master/assembly/bGeigieNano_bb.jpg)
+
+## Pins assignment
+
+| Arduino pin | Attached to |
+| :-----------: | :-----------: |
+| VCC | VCC pin of the GPS and OpenLog |
+| GND | GND pin of the GPS and OpenLog |
+| D2 | pulse pin from the Inspector audio jack |
+| D5 | TX pin of the GPS |
+| D6 | RX pin of the GPS |
+| D7 | TX pin of the OpenLog |
+| D8 | RX pin of the OpenLog |
+| D9 | GRN pin of the OpenLog |
 
 # Power consumption
 
@@ -74,6 +89,20 @@ Once powered on the bGeigieNano will initiliaze a new log file on the SD card, s
     $BNRDD,1,2012-06-05T07:58:32Z,0,0,0,V,35.622711,139.748610,75.30,0.07,A,6,530
     $BNRDD,1,2012-06-05T07:58:37Z,0,0,0,V,35.622700,139.748610,75.60,0.02,A,6,530
 
+# Notes
+## OpenLog config
+
+The OpenLog should start listening at 9600bps and in Command mode. Here is the content of the CONFIG.TXT file you have to create on the microSD card:
+
+    9600,26,3,2
+
+## SoftwareSerial update
+
+To make sure all of the NMEA sentences can be received correctly, we will need to update the _SS_MAX_RX_BUFF definition from arduino-1.0.1/libraries/SoftwareSerial/SoftwareSerial.h header file. Here is the modification:
+
+    //#define _SS_MAX_RX_BUFF 64 // RX buffer size -- Old Value is 64
+    #define _SS_MAX_RX_BUFF 128 // RX buffer size for TinyGPS
+
 # Licenses
  * [InterruptHandler and bGeigieMini code][5] - Copyright (c) 2011, Robin Scheibler aka FakuFaku
  * [TinyGPS][6] - Copyright (C) 2008-2012 Mikal Hart
@@ -86,3 +115,4 @@ Once powered on the bGeigieNano will initiliaze a new log file on the SD card, s
   [4]: http://pelican.com/cases_detail.php?Case=1040 "Pelican Micro Case 1040"
   [5]: https://github.com/fakufaku/SafecastBGeigie-firmware "SafecastBGeigie-firmware"
   [6]: http://arduiniana.org/libraries/tinygps/ "TinyGPS"
+  [7]: https://www.adafruit.com/products/746 "Ultimate GPS"
