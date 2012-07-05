@@ -38,9 +38,11 @@
 #include "InterruptCounter.h"
 
 // Definition flags -----------------------------------------------------------
-#define USE_MINIPRO // use software serial for GPS
+#define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
 #define USE_COUNTER
 #define USE_OPENLOG // disable for debugging
+//#define USE_MEDIATEK // MTK3339 initialization
+//#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
 #define DEBUG_LOG
 
 // PINs definition ------------------------------------------------------------
@@ -63,6 +65,9 @@
 // log file headers
 char hdr[6] = "BNRDD";  // header for sentence
 char fileHeader[] = "# NEW LOG\n# format=1.0.0nano\n";
+char logfile_name[13];  // placeholder for filename
+bool logfile_ready = false;
+char logfile_ext[] = ".log";
 
 // geiger statistics
 unsigned long shift_reg[NX] = {0};
@@ -80,6 +85,7 @@ static const int dev_id = 1;
 
 // OpenLog settings -----------------------------------------------------------
 #ifdef USE_OPENLOG
+#define OPENLOG_RETRY 200
 SoftwareSerial OpenLog(OPENLOG_RX_PIN, OPENLOG_TX_PIN); //Connect TXO of OpenLog to pin 8, RXI to pin 7
 static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Connect pin 9 to pin GRN on OpenLog.
 #endif
@@ -90,7 +96,7 @@ TinyGPS gps;
 char gps_status = VOID;
 static const int ledPin = GPS_LED_PIN;
 
-#ifdef USE_MINIPRO
+#ifdef USE_SOFTGPS
 SoftwareSerial gpsSerial(MINIPRO_GPS_RX_PIN, MINIPRO_GPS_TX_PIN);
 #endif
 
@@ -102,12 +108,20 @@ static char spd[BUFFER_SZ];
 static char sat[BUFFER_SZ];
 static char pre[BUFFER_SZ];
 
+// MTK33x9 chipset
+#define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
+#define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+#define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+
 // Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
+void gps_gen_filename(TinyGPS &gps, char *buf);
 byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
-void setupOpenLog(void);
+#ifdef USE_OPENLOG
+void setupOpenLog();
 void createFile(char *fileName);
-void gotoCommandMode(void);
+#endif
+void gps_program_settings();
 
 // ----------------------------------------------------------------------------
 // Setup
@@ -120,23 +134,19 @@ void setup()
   // enable and reset the watchdog timer
   wdt_enable(WDTO_8S);
   wdt_reset();
-  
+
 #ifdef USE_OPENLOG
 #ifdef DEBUG_LOG
   Serial.println("Initializing OpenLog.");
 #endif
-
-  setupOpenLog(); //Resets logger and waits for the '<' I'm alive character
-
-  // print header to serial
-  OpenLog.print(fileHeader);
-#endif
-
-#ifdef DEBUG_LOG
-  Serial.print(fileHeader);
+  OpenLog.begin(9600);
+  setupOpenLog();
 #endif
 
 #ifdef USE_COUNTER
+#ifdef DEBUG_LOG
+   Serial.println("Initializing pulse counter.");
+#endif
   // Create pulse counter on INT1
   interruptCounterSetup(interruptPin, TIME_INTERVAL);
 
@@ -144,8 +154,21 @@ void setup()
   interruptCounterReset();
 #endif
 
-#ifdef USE_MINIPRO
+#ifdef USE_SOFTGPS
+#ifdef DEBUG_LOG
+  Serial.println("Initializing GPS.");
+#endif
   gpsSerial.begin(9600);
+
+  // Put GPS serial in listen mode
+  gpsSerial.listen();
+
+  // initialize and program the GPS module
+  gps_program_settings();
+#endif
+
+#ifdef DEBUG_LOG
+  Serial.println("Setup completed.");
 #endif
 }
 
@@ -155,11 +178,16 @@ void setup()
 void loop()
 {
   bool gpsReady = false;
+
+#ifdef USE_SOFTGPS
+  // Put GPS serial in listen mode
+  gpsSerial.listen();
+#endif
   
   // For one second we parse GPS data and report some key values
   for (unsigned long start = millis(); millis() - start < GPS_INTERVAL;)
   {
-#ifdef USE_MINIPRO
+#ifdef USE_SOFTGPS
     while (gpsSerial.available())
     {
       char c = gpsSerial.read();
@@ -225,12 +253,35 @@ void loop()
       memset(line, 0, LINE_SZ);
       line_len = gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
 
+      if ((!logfile_ready) && (gpsReady))
+      {
+         logfile_ready = true;
+         gps_gen_filename(gps, logfile_name);
+
+#ifdef USE_OPENLOG
+#ifdef DEBUG_LOG
+         Serial.println("Create new logfile.");
+#endif
+         createFile(logfile_name);
+         // print header to serial
+         OpenLog.print(fileHeader);
+#endif
+
+#ifdef DEBUG_LOG
+         Serial.print(fileHeader);
+#endif
+      }
+
       // Printout line
 #ifdef DEBUG_LOG
       Serial.println(line);
 #endif
 #ifdef USE_OPENLOG
-      OpenLog.println(line);
+      if (logfile_ready) {
+        // Put OpenLog serial in listen mode
+        OpenLog.listen();
+        OpenLog.println(line);
+      }
 #endif
   }
 }
@@ -238,70 +289,119 @@ void loop()
 // ----------------------------------------------------------------------------
 // Utility functions
 // ----------------------------------------------------------------------------
-#ifdef USE_OPENLOG
-//Setups up the software serial, resets OpenLog so we know what state it's in, and waits
-//for OpenLog to come online and report '<' that it is ready to receive characters to record
-void setupOpenLog(void) {
-  pinMode(resetOpenLog, OUTPUT);
-  OpenLog.begin(9600);
 
-  //Reset OpenLog
+#ifdef USE_OPENLOG
+/* setups up the software serial, resets OpenLog */
+void setupOpenLog() {
+  int safeguard = 0;
+
+  pinMode(resetOpenLog, OUTPUT);
+  OpenLog.listen();
+
+  // reset OpenLog
+#ifdef DEBUG_LOG
+  Serial.println(" - reset");
+#endif
   digitalWrite(resetOpenLog, LOW);
   delay(100);
   digitalWrite(resetOpenLog, HIGH);
 
-  //Wait for OpenLog to respond with '<' to indicate it is alive and recording to a file
-  while(1) {
+  safeguard = 0;
+  while(safeguard < OPENLOG_RETRY) {
+    safeguard++;
     if(OpenLog.available())
-      if(OpenLog.read() == '<') break;
+      if(OpenLog.read() == '>') break;
+    delay(10);
+  }
+
+  if (safeguard >= OPENLOG_RETRY) {
+#ifdef DEBUG_LOG
+    Serial.println("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
+#endif
+    // Assume "newlog mode" is active
+    logfile_ready = true;
+  } else {
+#ifdef DEBUG_LOG
+    Serial.println(" - ready");
+#endif
   }
 }
 
-//This function creates a given file and then opens it in append mode (ready to record characters to the file)
-//Then returns to listening mode
+/* create a new file */
 void createFile(char *fileName) {
+  int result = 0;
+  int safeguard = 0;
 
-  //Old way
-  OpenLog.print("new ");
-  OpenLog.print(fileName);
-  OpenLog.write(13); //This is \r
+  OpenLog.listen();
 
-  //New way
-  //OpenLog.print("new ");
-  //OpenLog.println(filename); //regular println works with OpenLog v2.51 and above
+  do {
+    result = 0;
 
-  //Wait for OpenLog to return to waiting for a command
-  while(1) {
-    if(OpenLog.available())
-      if(OpenLog.read() == '>') break;
-  }
+    do {
+      // reset the watchdog timer
+      wdt_reset();
 
-  OpenLog.print("append ");
-  OpenLog.print(fileName);
-  OpenLog.write(13); //This is \r
+#ifdef DEBUG_LOG
+      Serial.print(" - append ");
+      Serial.println(fileName);
+#endif
 
-  //Wait for OpenLog to indicate file is open and ready for writing
-  while(1) {
-    if(OpenLog.available())
-      if(OpenLog.read() == '<') break;
-  }
+      OpenLog.print("append ");
+      OpenLog.print(fileName);
+      OpenLog.write(13); //This is \r
+
+      //Wait for OpenLog to indicate file is open and ready for writing
+#ifdef DEBUG_LOG
+      Serial.println(" - wait");
+#endif
+      safeguard = 0;
+      while(safeguard < OPENLOG_RETRY) {
+        safeguard++;
+        if(OpenLog.available())
+          if(OpenLog.read() == '<') break;
+        delay(10);
+      }
+      if (safeguard >= OPENLOG_RETRY) {
+#ifdef DEBUG_LOG
+        Serial.println("Append file failed");
+#endif
+        break;
+      } else {
+#ifdef DEBUG_LOG
+        Serial.println(" - ready");
+#endif
+      }
+      result = 1;
+    } while (0);
+
+    if (0 == result) {
+      // reset OpenLog
+#ifdef DEBUG_LOG
+      Serial.println(" - reset");
+#endif
+      digitalWrite(resetOpenLog, LOW);
+      delay(100);
+      digitalWrite(resetOpenLog, HIGH);
+
+      //Wait for OpenLog to return to waiting for a command
+      safeguard = 0;
+      while(safeguard < OPENLOG_RETRY) {
+        safeguard++;
+        if(OpenLog.available())
+          if(OpenLog.read() == '>') break;
+        delay(10);
+      }
+#ifdef DEBUG_LOG
+      if (safeguard >= OPENLOG_RETRY) {
+        Serial.println("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
+      } else {
+        Serial.println(" - ready");
+      }
+#endif
+    }
+  } while (0 == result);
 
   //OpenLog is now waiting for characters and will record them to the new file  
-}
-
-//This function pushes OpenLog into command mode
-void gotoCommandMode(void) {
-  //Send three control z to enter OpenLog command mode
-  //Works with Arduino v1.0
-  OpenLog.write(26);
-  OpenLog.write(26);
-  OpenLog.write(26);
-
-  //Wait for OpenLog to respond with '>' to indicate we are in command mode
-  while(1) {
-    if(OpenLog.available())
-      if(OpenLog.read() == '>') break;
-  }
 }
 #endif
 
@@ -337,6 +437,29 @@ void convertGPStoNMEA(double coordinate, char *buf) {
     double DegreesMinutes   = Minutes * 60 + ( Degrees * 10 * 10 );   
 
     dtostrf(DegreesMinutes, 0, 4, buf); // 4 decimal places
+}
+
+/* generate log filename */
+void gps_gen_filename(TinyGPS &gps, char *buf) {
+  int year = 2012;
+  byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
+  unsigned long age;
+  char temp[8];
+
+  gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
+  if (TinyGPS::GPS_INVALID_AGE == age) {
+    year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
+  }
+  
+  // Create the filename for that drive
+  sprintf(temp, "%03d",dev_id); 
+  strcpy(buf, temp);
+  strcat(buf, "-");
+  sprintf(temp, "%02d",month); 
+  strncat(buf, temp, 2);
+  sprintf(temp, "%02d",day);
+  strncat(buf, temp, 2);
+  strcpy(buf+8, logfile_ext);
 }
 
 /* generate log result line */
@@ -416,4 +539,57 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
      sprintf(buf + len, "*%X", (int)chk);
 
    return len;
+}
+
+/* setup the GPS module to 1Hz and RMC+GGA messages only */
+void gps_program_settings()
+{
+#ifdef USE_MEDIATEK
+  gpsSerial.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  gpsSerial.println(PMTK_SET_NMEA_UPDATE_1HZ);
+#endif
+
+#ifdef USE_SKYTRAQ
+  // all GPS command taken from datasheet
+  // "Binary Messages Of SkyTraq Venus 6 GPS Receiver"
+
+  // set GGA and RMC output at 1Hz
+  uint8_t GPS_MSG_OUTPUT_GGARMC_1S[9] = { 0x08, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01 }; // with update to RAM and FLASH
+  uint16_t GPS_MSG_OUTPUT_GGARMC_1S_L = 9;
+
+  // Power Save mode (not sure what it is doing at the moment
+  uint8_t GPS_MSG_PWR_SAVE[3] = { 0x0C, 0x01, 0x01 }; // update to FLASH too
+  uint16_t GPS_MSG_PWR_SAVE_L = 3;
+
+  // wait for GPS to start
+  while(!Serial.available())
+    delay(10);
+
+  // send all commands
+  gps_send_message(GPS_MSG_OUTPUT_GGARMC_1S, GPS_MSG_OUTPUT_GGARMC_1S_L);
+  gps_send_message(GPS_MSG_PWR_SAVE, GPS_MSG_PWR_SAVE_L);
+#endif
+}
+
+void gps_send_message(const uint8_t *msg, uint16_t len)
+{
+  uint8_t chk = 0x0;
+  // header
+  gpsSerial.write(0xA0);
+  gpsSerial.write(0xA1);
+  // send length
+  gpsSerial.write(len >> 8);
+  gpsSerial.write(len & 0xff);
+  // send message
+  for (unsigned int i = 0 ; i < len ; i++)
+  {
+    gpsSerial.write(msg[i]);
+    chk ^= msg[i];
+  }
+  // checksum
+  gpsSerial.write(chk);
+  // end of message
+  gpsSerial.write(0x0D);
+  gpsSerial.write(0x0A);
+  gpsSerial.write('\n');
 }
