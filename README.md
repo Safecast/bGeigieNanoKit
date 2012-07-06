@@ -33,22 +33,27 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 
 # Power consumption
 
-## Estimation
 * **Fio**: 0.045mA sleep, 6mA at run time
 * **OpenLog**: 2mA idle, 6mA at maximum recording rate
 * **GPSBee**: 102mA acquisition, 44mA tracking
+* **Adafruit Ultimate GPS**: 25mA acquisition, 20mA tracking
 
+## Estimation with GPSBee
 The total current used at run time can be estimated around 56mA (= 6+6+44) per second which will result in a consumption of 0.0155mAh (= 56mA/3600). So
-the total log duration if using a battery of 850mAh will be (850/.0155)/3600 = 15.17 = 15h10m
+the total log duration if using a battery of 850mAh will be (850/.0155)/3600 = 15.17 = **15h10m**
+
+## Estimation with Adafruit Ultimate GPS (MTK3339)
+The total current used at run time can be estimated around 32mA (= 6+6+20) per second which will result in a consumption of 0.0088mAh (= 32mA/3600). So
+the total log duration if using a battery of 850mAh will be (850/.0088)/3600 = 26.56 = **26h33m**
 
 ## Summary table
 
-| Battery capacity (mAh) | Estimated log duration (days hh:mm) |
-| :-----------: | :-----------: |
-| 850 |	0d 15:10 |
-| 1000 | 0d 17:51 |
-| 2000 | 1d 11:42 |
-| 6000 | 4d 11:08 |
+| Battery capacity (mAh) | Estimated log duration GPSBee (days hh:mm) | Estimated log duration Ultimate GPS (days hh:mm) |
+| :-----------: | :-----------: | :-----------: |
+| 850 |	0d 15:10 | 1d 02:33 |
+| 1000 | 0d 17:51 | 1d 07:15 |
+| 2000 | 1d 11:42 | 2d 14:30 |
+| 6000 | 4d 11:08 | 7d 19:30 |
 
 # Build process
 ## Using the Makefile
