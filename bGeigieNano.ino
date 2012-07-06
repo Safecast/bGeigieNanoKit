@@ -36,6 +36,7 @@
 #include <avr/wdt.h>
 #include "TinyGPS.h"
 #include "InterruptCounter.h"
+#include <EEPROM.h>
 
 // Definition flags -----------------------------------------------------------
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
@@ -43,6 +44,7 @@
 #define USE_OPENLOG // disable for debugging
 //#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
+//#define USE_EEPROM_ID // use device id stored in EEPROM
 #define DEBUG_LOG
 
 // PINs definition ------------------------------------------------------------
@@ -61,6 +63,8 @@
 #define NX 12
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
+#define BMRDD_EEPROM_ID 100
+#define BMRDD_ID_LEN 3
 
 // log file headers
 char hdr[6] = "BNRDD";  // header for sentence
@@ -81,7 +85,7 @@ static char line[LINE_SZ];
 
 // geiger id and interrupt
 static const int interruptPin = COUNTER_INTERRUPT; // 0 = pin2, 1= pin3
-static const int dev_id = 1;
+char dev_id[BMRDD_ID_LEN+1] = {'0', '0', '0', '0'};  // device id (default 000)
 
 // OpenLog settings -----------------------------------------------------------
 #ifdef USE_OPENLOG
@@ -122,6 +126,9 @@ void setupOpenLog();
 void createFile(char *fileName);
 #endif
 void gps_program_settings();
+#ifdef USE_EEPROM_ID
+void getEEPROMDevId();
+#endif
 
 // ----------------------------------------------------------------------------
 // Setup
@@ -166,6 +173,15 @@ void setup()
   // initialize and program the GPS module
   gps_program_settings();
 #endif
+
+#ifdef USE_EEPROM_ID
+  getEEPROMDevId();
+#endif
+
+#ifdef DEBUG_LOG
+  Serial.print("Devide id = ");
+  Serial.println(dev_id);
+#endif  
 
 #ifdef DEBUG_LOG
   Serial.println("Setup completed.");
@@ -452,8 +468,7 @@ void gps_gen_filename(TinyGPS &gps, char *buf) {
   }
   
   // Create the filename for that drive
-  sprintf(temp, "%03d",dev_id); 
-  strcpy(buf, temp);
+  strcpy(buf, dev_id);
   strcat(buf, "-");
   sprintf(temp, "%02d",month); 
   strncat(buf, temp, 2);
@@ -510,7 +525,7 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   
   memset(buf, 0, LINE_SZ);
 
-  sprintf(buf, "$%s,%d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%s,%s",  \
+  sprintf(buf, "$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%s,%s",  \
               hdr, \
               dev_id, \
               year, month, day,  \
@@ -593,3 +608,41 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
   gpsSerial.write(0x0A);
   gpsSerial.write('\n');
 }
+
+#ifdef USE_EEPROM_ID
+/* retrieve the device id from EEPROM */
+void getEEPROMDevId()
+{
+  // counter for trials of reading EEPROM
+  int n = 0;
+  int N = 3;
+
+  cli(); // disable all interrupts
+
+  for (int i=0 ; i < BMRDD_ID_LEN ; i++)
+  {
+    // try to read one time
+    dev_id[i] = (char)EEPROM.read(i+BMRDD_EEPROM_ID);
+    n = 1;
+    // while it's not numberic, and up to N times, try to reread.
+    while ((dev_id[i] < '0' || dev_id[i] > '9') && n < N)
+    {
+      // wait a little before we retry
+      delay(10);        
+      // reread once and then increment the counter
+      dev_id[i] = (char)EEPROM.read(i+BMRDD_EEPROM_ID);
+      n++;
+    }
+
+    // catch when the read number is non-numeric, replace with capital X
+    if (dev_id[i] < '0' || dev_id[i] > '9')
+      dev_id[i] = 'X';
+  }
+
+  // set the end of string null
+  dev_id[BMRDD_ID_LEN] = '\0';
+
+  sei(); // re-enable all interrupts
+}
+#endif
+
