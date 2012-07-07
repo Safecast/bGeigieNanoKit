@@ -44,7 +44,7 @@
 #define USE_OPENLOG // disable for debugging
 //#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
-//#define USE_EEPROM_ID // use device id stored in EEPROM
+#define USE_EEPROM_ID // use device id stored in EEPROM
 #define DEBUG_LOG
 
 // PINs definition ------------------------------------------------------------
@@ -85,7 +85,7 @@ static char line[LINE_SZ];
 
 // geiger id and interrupt
 static const int interruptPin = COUNTER_INTERRUPT; // 0 = pin2, 1= pin3
-char dev_id[BMRDD_ID_LEN+1] = {'0', '0', '0', '0'};  // device id (default 000)
+char dev_id[BMRDD_ID_LEN+1] = {'2', '0', '0', 0};  // device id (default 200)
 
 // OpenLog settings -----------------------------------------------------------
 #ifdef USE_OPENLOG
@@ -96,7 +96,7 @@ static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Conn
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
-#define GPS_INTERVAL 1000
+#define GPS_INTERVAL 500
 char gps_status = VOID;
 static const int ledPin = GPS_LED_PIN;
 
@@ -120,7 +120,7 @@ static char pre[BUFFER_SZ];
 // Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
 void gps_gen_filename(TinyGPS &gps, char *buf);
-byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
+bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
 #ifdef USE_OPENLOG
 void setupOpenLog();
 void createFile(char *fileName);
@@ -135,6 +135,8 @@ void getEEPROMDevId();
 // ----------------------------------------------------------------------------
 void setup()
 {
+  //setEEPROMDevId("203");
+  
   pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
 
@@ -219,7 +221,7 @@ void loop()
     }
   }
   
-  if (gpsReady) {
+  if ((gpsReady) || (gps_status == AVAILABLE)) {
     digitalWrite(ledPin, HIGH);
   } else {
     digitalWrite(ledPin, LOW);
@@ -229,7 +231,6 @@ void loop()
   if (interruptCounterAvailable())
   {
       unsigned long cpm=0, cpb=0;
-      byte line_len;
 
       // first, reset the watchdog timer
       wdt_reset();
@@ -267,9 +268,9 @@ void loop()
       // we printed the timestamp. otherwise, the GPS is still 
       // updating so wait until its finished and generate timestamp
       memset(line, 0, LINE_SZ);
-      line_len = gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
+      gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
 
-      if ((!logfile_ready) && (gpsReady))
+      if ((!logfile_ready) && (gps_status == AVAILABLE))
       {
          logfile_ready = true;
          gps_gen_filename(gps, logfile_name);
@@ -478,7 +479,7 @@ void gps_gen_filename(TinyGPS &gps, char *buf) {
 }
 
 /* generate log result line */
-byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
+bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
   int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
@@ -553,7 +554,7 @@ byte gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    else
      sprintf(buf + len, "*%X", (int)chk);
 
-   return len;
+   return (gps_status == AVAILABLE);
 }
 
 /* setup the GPS module to 1Hz and RMC+GGA messages only */
@@ -643,6 +644,14 @@ void getEEPROMDevId()
   dev_id[BMRDD_ID_LEN] = '\0';
 
   sei(); // re-enable all interrupts
+}
+
+void setEEPROMDevId(char * id)
+{
+ for (int i=0 ; i < BMRDD_ID_LEN ; i++)
+  {
+    EEPROM.write(BMRDD_EEPROM_ID+i, byte(id[i]));
+  }
 }
 #endif
 
