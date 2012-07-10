@@ -35,26 +35,38 @@
 #include <stdlib.h>
 #include <avr/wdt.h>
 #include "TinyGPS.h"
-#include "InterruptCounter.h"
 #include <EEPROM.h>
 
 // Definition flags -----------------------------------------------------------
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
-#define USE_COUNTER
+//#define USE_HARDWARE_COUNTER // pulse on digital pin5
 #define USE_OPENLOG // disable for debugging
 //#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
 #define USE_EEPROM_ID // use device id stored in EEPROM
-#define DEBUG_LOG
+#define DEBUG // enable debug log output
+//#define DEBUG_DIAGNOSTIC
 
 // PINs definition ------------------------------------------------------------
+#ifdef USE_HARDWARE_COUNTER
+// Pin assignment for version 1.0.1
+#warning Hardware counter is used !
+#define MINIPRO_GPS_RX_PIN 6
+#define MINIPRO_GPS_TX_PIN 7
+#define OPENLOG_RX_PIN 8
+#define OPENLOG_TX_PIN 9
+#define OPENLOG_RST_PIN 10
+#else
+// Old Pin assignment for version 1.0.0
+#warning Interrupt counter is used !
 #define MINIPRO_GPS_RX_PIN 5
 #define MINIPRO_GPS_TX_PIN 6
 #define OPENLOG_RX_PIN 7
 #define OPENLOG_TX_PIN 8
 #define OPENLOG_RST_PIN 9
+#endif
 #define GPS_LED_PIN 13
-#define COUNTER_INTERRUPT 0 // 0 = dpin2, 1 = dpin3
+#define VOLTAGE_PIN A7
 
 // Geiger settings ------------------------------------------------------------
 #define TIME_INTERVAL 5000
@@ -83,9 +95,20 @@ char geiger_status = VOID;
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
 
-// geiger id and interrupt
-static const int interruptPin = COUNTER_INTERRUPT; // 0 = pin2, 1= pin3
+// geiger id
 char dev_id[BMRDD_ID_LEN+1] = {'2', '0', '0', 0};  // device id (default 200)
+
+// Pulse counter --------------------------------------------------------------
+#ifdef USE_HARDWARE_COUNTER
+// Hardware counter
+#include "HardwareCounter.h"
+#define COUNTER_TIMER1 5  // the timer1 pin on the 328p is D5
+HardwareCounter hwc(COUNTER_TIMER1, TIME_INTERVAL);
+#else
+// Interrupt counter
+#include "InterruptCounter.h"
+#define COUNTER_INTERRUPT 0 // 0 = dpin2, 1 = dpin3
+#endif
 
 // OpenLog settings -----------------------------------------------------------
 #ifdef USE_OPENLOG
@@ -96,7 +119,7 @@ static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Conn
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps;
-#define GPS_INTERVAL 500
+#define GPS_INTERVAL 1000
 char gps_status = VOID;
 static const int ledPin = GPS_LED_PIN;
 
@@ -117,6 +140,15 @@ static char pre[BUFFER_SZ];
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 
+// Debug definitions ----------------------------------------------------------
+#ifdef DEBUG
+  #define DEBUG_PRINT(x) Serial.print(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+#endif
+
 // Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
 void gps_gen_filename(TinyGPS &gps, char *buf);
@@ -129,44 +161,46 @@ void gps_program_settings();
 #ifdef USE_EEPROM_ID
 void getEEPROMDevId();
 #endif
+float read_voltage(int pin);
 
 // ----------------------------------------------------------------------------
 // Setup
 // ----------------------------------------------------------------------------
 void setup()
 {
-  //setEEPROMDevId("203");
+  // Set the EEPPROM device id at first run
+  //setEEPROMDevId("204");
   
   pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
 
+#ifndef USE_HARDWARE_COUNTER
   // enable and reset the watchdog timer
   wdt_enable(WDTO_8S);
   wdt_reset();
+#endif
 
 #ifdef USE_OPENLOG
-#ifdef DEBUG_LOG
-  Serial.println("Initializing OpenLog.");
-#endif
+  DEBUG_PRINTLN("Initializing OpenLog.");
   OpenLog.begin(9600);
   setupOpenLog();
 #endif
 
-#ifdef USE_COUNTER
-#ifdef DEBUG_LOG
-   Serial.println("Initializing pulse counter.");
-#endif
+  DEBUG_PRINTLN("Initializing pulse counter.");
+
+#ifdef USE_HARDWARE_COUNTER
+  // Start the Pulse Counter!
+  hwc.start();
+#else
   // Create pulse counter on INT1
-  interruptCounterSetup(interruptPin, TIME_INTERVAL);
+  interruptCounterSetup(COUNTER_INTERRUPT, TIME_INTERVAL);
 
   // And now Start the Pulse Counter!
   interruptCounterReset();
 #endif
 
 #ifdef USE_SOFTGPS
-#ifdef DEBUG_LOG
-  Serial.println("Initializing GPS.");
-#endif
+  DEBUG_PRINTLN("Initializing GPS.");
   gpsSerial.begin(9600);
 
   // Put GPS serial in listen mode
@@ -180,14 +214,15 @@ void setup()
   getEEPROMDevId();
 #endif
 
-#ifdef DEBUG_LOG
-  Serial.print("Devide id = ");
-  Serial.println(dev_id);
-#endif  
+  DEBUG_PRINT("Devide id = ");
+  DEBUG_PRINTLN(dev_id);
 
-#ifdef DEBUG_LOG
-  Serial.println("Setup completed.");
+#ifdef DEBUG_DIAGNOSTIC
+  // setup analog reference to read battery and boost voltage
+  analogReference(INTERNAL);
 #endif
+
+  DEBUG_PRINTLN("Setup completed.");
 }
 
 // ----------------------------------------------------------------------------
@@ -226,23 +261,30 @@ void loop()
   } else {
     digitalWrite(ledPin, LOW);
   }
-  
+
   // generate CPM every TIME_INTERVAL seconds
-  if (interruptCounterAvailable())
-  {
+#ifdef USE_HARDWARE_COUNTER 
+  if (hwc.available()) {
+#else
+  if (interruptCounterAvailable())  {
+#endif
       unsigned long cpm=0, cpb=0;
 
       // first, reset the watchdog timer
       wdt_reset();
 
-#ifdef USE_COUNTER
+#ifdef USE_HARDWARE_COUNTER
+      // obtain the count in the last bin
+      cpb = hwc.count();
+
+      // reset the pulse counter
+      hwc.start();
+#else
       // obtain the count in the last bin
       cpb = interruptCounterCount();
 
       // reset the pulse counter
       interruptCounterReset();
-#else
-      cpb = 15;
 #endif
 
       // insert count in sliding window and compute CPM
@@ -276,31 +318,37 @@ void loop()
          gps_gen_filename(gps, logfile_name);
 
 #ifdef USE_OPENLOG
-#ifdef DEBUG_LOG
-         Serial.println("Create new logfile.");
-#endif
+         DEBUG_PRINTLN("Create new logfile.");
          createFile(logfile_name);
          // print header to serial
          OpenLog.print(fileHeader);
 #endif
-
-#ifdef DEBUG_LOG
-         Serial.print(fileHeader);
-#endif
+         DEBUG_PRINT(fileHeader);
       }
 
       // Printout line
-#ifdef DEBUG_LOG
-      Serial.println(line);
+      DEBUG_PRINTLN(line);
+
+#ifdef DEBUG_DIAGNOSTIC
+      int v0 = (int)(read_voltage(VOLTAGE_PIN));
+      DEBUG_PRINT("$DIAG,");
+      DEBUG_PRINTLN(v0);
 #endif
+      
 #ifdef USE_OPENLOG
       if (logfile_ready) {
         // Put OpenLog serial in listen mode
         OpenLog.listen();
         OpenLog.println(line);
+
+#ifdef DEBUG_DIAGNOSTIC
+        OpenLog.print("$DIAG,");
+        OpenLog.println(v0);
+#endif
       }
 #endif
   }
+  
 }
 
 // ----------------------------------------------------------------------------
@@ -316,9 +364,7 @@ void setupOpenLog() {
   OpenLog.listen();
 
   // reset OpenLog
-#ifdef DEBUG_LOG
-  Serial.println(" - reset");
-#endif
+  DEBUG_PRINTLN(" - reset");
   digitalWrite(resetOpenLog, LOW);
   delay(100);
   digitalWrite(resetOpenLog, HIGH);
@@ -332,15 +378,11 @@ void setupOpenLog() {
   }
 
   if (safeguard >= OPENLOG_RETRY) {
-#ifdef DEBUG_LOG
-    Serial.println("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
-#endif
+    DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
     // Assume "newlog mode" is active
     logfile_ready = true;
   } else {
-#ifdef DEBUG_LOG
-    Serial.println(" - ready");
-#endif
+    DEBUG_PRINTLN(" - ready");
   }
 }
 
@@ -358,19 +400,15 @@ void createFile(char *fileName) {
       // reset the watchdog timer
       wdt_reset();
 
-#ifdef DEBUG_LOG
-      Serial.print(" - append ");
-      Serial.println(fileName);
-#endif
+      DEBUG_PRINT(" - append ");
+      DEBUG_PRINTLN(fileName);
 
       OpenLog.print("append ");
       OpenLog.print(fileName);
       OpenLog.write(13); //This is \r
 
-      //Wait for OpenLog to indicate file is open and ready for writing
-#ifdef DEBUG_LOG
-      Serial.println(" - wait");
-#endif
+      // wait for OpenLog to indicate file is open and ready for writing
+      DEBUG_PRINTLN(" - wait");
       safeguard = 0;
       while(safeguard < OPENLOG_RETRY) {
         safeguard++;
@@ -379,23 +417,17 @@ void createFile(char *fileName) {
         delay(10);
       }
       if (safeguard >= OPENLOG_RETRY) {
-#ifdef DEBUG_LOG
-        Serial.println("Append file failed");
-#endif
+        DEBUG_PRINTLN("Append file failed");
         break;
       } else {
-#ifdef DEBUG_LOG
-        Serial.println(" - ready");
-#endif
+        DEBUG_PRINTLN(" - ready");
       }
       result = 1;
     } while (0);
 
     if (0 == result) {
       // reset OpenLog
-#ifdef DEBUG_LOG
-      Serial.println(" - reset");
-#endif
+      DEBUG_PRINTLN(" - reset");
       digitalWrite(resetOpenLog, LOW);
       delay(100);
       digitalWrite(resetOpenLog, HIGH);
@@ -408,11 +440,11 @@ void createFile(char *fileName) {
           if(OpenLog.read() == '>') break;
         delay(10);
       }
-#ifdef DEBUG_LOG
+#ifdef DEBUG
       if (safeguard >= OPENLOG_RETRY) {
-        Serial.println("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
+        DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
       } else {
-        Serial.println(" - ready");
+        DEBUG_PRINTLN(" - ready");
       }
 #endif
     }
@@ -578,7 +610,7 @@ void gps_program_settings()
   uint16_t GPS_MSG_PWR_SAVE_L = 3;
 
   // wait for GPS to start
-  while(!Serial.available())
+  while(!gpsSerial.available())
     delay(10);
 
   // send all commands
@@ -655,3 +687,9 @@ void setEEPROMDevId(char * id)
 }
 #endif
 
+#ifdef DEBUG_DIAGNOSTIC
+float read_voltage(int pin)
+{
+  return 1.1*analogRead(pin)*(3300/1024);
+}
+#endif
