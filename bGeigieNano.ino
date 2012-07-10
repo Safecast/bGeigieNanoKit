@@ -46,6 +46,9 @@
 #define USE_EEPROM_ID // use device id stored in EEPROM
 #define DEBUG // enable debug log output
 //#define DEBUG_DIAGNOSTIC
+#ifdef USE_HARDWARE_COUNTER
+#define USE_SLEEPMODE 
+#endif
 
 // PINs definition ------------------------------------------------------------
 #ifdef USE_HARDWARE_COUNTER
@@ -163,6 +166,40 @@ void getEEPROMDevId();
 #endif
 float read_voltage(int pin);
 
+// Sleep mode -----------------------------------------------------------------
+#ifdef USE_SLEEPMODE
+#include <avr/sleep.h>
+#include <avr/power.h>
+
+volatile int f_wdt=1;
+
+ISR(WDT_vect)
+{
+  if(f_wdt == 0)
+  {
+    f_wdt=1;
+  }
+  else
+  {
+    DEBUG_PRINTLN("WARNING: WDT Overrun");
+  }
+}
+void enterSleep(void)
+{
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+  
+  // Enable and enter sleep mode
+  sleep_enable();
+  sleep_mode();
+  
+  // The program will continue from here after the WDT timeout
+
+  // Disable sleep and re-enable the peripherals
+  sleep_disable();
+  power_all_enable();
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // Setup
 // ----------------------------------------------------------------------------
@@ -222,6 +259,21 @@ void setup()
   analogReference(INTERNAL);
 #endif
 
+#ifdef USE_SLEEPMODE
+  // Setup WDT
+  // Clear the reset flag
+  MCUSR &= ~(1<<WDRF);
+  
+  // Set WDCE (4 clock cycles updates)
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+
+  // Set new watchdog timeout prescaler value
+  WDTCSR = 1<<WDP3; // 4.0 seconds
+  
+  // Enable the WD interrupt
+  WDTCSR |= _BV(WDIE);
+#endif
+
   DEBUG_PRINTLN("Setup completed.");
 }
 
@@ -231,6 +283,11 @@ void setup()
 void loop()
 {
   bool gpsReady = false;
+
+#ifdef USE_SLEEPMODE
+  if(f_wdt == 1)
+  {
+#endif
 
 #ifdef USE_SOFTGPS
   // Put GPS serial in listen mode
@@ -348,6 +405,18 @@ void loop()
       }
 #endif
   }
+
+#ifdef USE_SLEEPMODE
+    // Leave some time to serial to flush data
+    delay(100);
+
+    // Clear the flag
+    f_wdt = 0;
+    
+    // Re-enter sleep mode
+    enterSleep();
+  }
+#endif
   
 }
 
