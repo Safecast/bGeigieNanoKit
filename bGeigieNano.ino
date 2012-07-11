@@ -154,7 +154,7 @@ static char pre[BUFFER_SZ];
 
 // Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
-void gps_gen_filename(TinyGPS &gps, char *buf);
+bool gps_gen_filename(TinyGPS &gps, char *buf);
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
 #ifdef USE_OPENLOG
 void setupOpenLog();
@@ -162,6 +162,7 @@ void createFile(char *fileName);
 #endif
 void gps_program_settings();
 #ifdef USE_EEPROM_ID
+void setEEPROMDevId(char * id);
 void getEEPROMDevId();
 #endif
 float read_voltage(int pin);
@@ -211,7 +212,7 @@ void setup()
   pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
 
-#ifndef USE_HARDWARE_COUNTER
+#ifndef USE_SLEEPMODE
   // enable and reset the watchdog timer
   wdt_enable(WDTO_8S);
   wdt_reset();
@@ -327,8 +328,10 @@ void loop()
 #endif
       unsigned long cpm=0, cpb=0;
 
+#ifndef USE_SLEEPMODE
       // first, reset the watchdog timer
       wdt_reset();
+#endif
 
 #ifdef USE_HARDWARE_COUNTER
       // obtain the count in the last bin
@@ -371,16 +374,17 @@ void loop()
 
       if ((!logfile_ready) && (gps_status == AVAILABLE))
       {
-         logfile_ready = true;
-         gps_gen_filename(gps, logfile_name);
+         if (gps_gen_filename(gps, logfile_name)) {
+           logfile_ready = true;
 
 #ifdef USE_OPENLOG
-         DEBUG_PRINTLN("Create new logfile.");
-         createFile(logfile_name);
-         // print header to serial
-         OpenLog.print(fileHeader);
+           DEBUG_PRINTLN("Create new logfile.");
+           createFile(logfile_name);
+           // print header to serial
+           OpenLog.print(fileHeader);
 #endif
-         DEBUG_PRINT(fileHeader);
+           DEBUG_PRINT(fileHeader);
+         }
       }
 
       // Printout line
@@ -466,8 +470,10 @@ void createFile(char *fileName) {
     result = 0;
 
     do {
+#ifndef USE_SLEEPMODE
       // reset the watchdog timer
       wdt_reset();
+#endif
 
       DEBUG_PRINT(" - append ");
       DEBUG_PRINTLN(fileName);
@@ -558,7 +564,7 @@ void convertGPStoNMEA(double coordinate, char *buf) {
 }
 
 /* generate log filename */
-void gps_gen_filename(TinyGPS &gps, char *buf) {
+bool gps_gen_filename(TinyGPS &gps, char *buf) {
   int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   unsigned long age;
@@ -566,7 +572,7 @@ void gps_gen_filename(TinyGPS &gps, char *buf) {
 
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
-    year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
+    return false;
   }
   
   // Create the filename for that drive
@@ -577,6 +583,8 @@ void gps_gen_filename(TinyGPS &gps, char *buf) {
   sprintf(temp, "%02d",day);
   strncat(buf, temp, 2);
   strcpy(buf+8, logfile_ext);
+
+  return true;
 }
 
 /* generate log result line */
