@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _GPRMC_TERM   "GPRMC"
 #define _GPGGA_TERM   "GPGGA"
 
-TinyGPS::TinyGPS()
+TinyGPS::TinyGPS(bool enable_raw)
   :  _time(GPS_INVALID_TIME)
   ,  _date(GPS_INVALID_DATE)
   ,  _latitude(GPS_INVALID_ANGLE)
@@ -50,6 +50,7 @@ TinyGPS::TinyGPS()
 #endif
 {
   _term[0] = '\0';
+  _raw_enabled = enable_raw;
 }
 
 //
@@ -157,6 +158,24 @@ unsigned long TinyGPS::parse_degrees()
   return (left / 100) * 100000 + tenk_minutes / 6;
 }
 
+unsigned long TinyGPS::parse_degrees_raw()
+{
+  char *p;
+  unsigned long left = gpsatol(_term);
+  unsigned long right = 0;
+  for (p=_term; gpsisdigit(*p); ++p);
+  if (*p == '.')
+  {
+    unsigned long mult = 10000;
+    while (gpsisdigit(*++p))
+    {
+      right += mult * (*p - '0');
+      mult /= 10;
+    }
+  }
+  return (left * 100000) + right;
+}
+
 #define COMBINE(sentence_type, term_number) (((unsigned)(sentence_type) << 5) | term_number)
 
 // Processes a just-completed term
@@ -197,6 +216,21 @@ bool TinyGPS::term_complete()
         }
 
         return true;
+      } else {
+        // Handle MTK3339 RTC clock (even with no GPS fix)
+        if (_new_time) {
+          _last_time_fix = _new_time_fix;
+          switch(_sentence_type)
+          {
+          case _GPS_SENTENCE_GPRMC:
+            _time      = _new_time;
+            _date      = _new_date;
+            break;
+          case _GPS_SENTENCE_GPGGA:
+            _time      = _new_time;
+            break;
+          }
+        }
       }
     }
 
@@ -232,7 +266,11 @@ bool TinyGPS::term_complete()
       break;
     case COMBINE(_GPS_SENTENCE_GPRMC, 3): // Latitude
     case COMBINE(_GPS_SENTENCE_GPGGA, 2):
-      _new_latitude = parse_degrees();
+      if (_raw_enabled) {
+        _new_latitude = parse_degrees_raw();
+      } else {
+        _new_latitude = parse_degrees();
+      }
       _new_position_fix = millis();
       break;
     case COMBINE(_GPS_SENTENCE_GPRMC, 4): // N/S
@@ -242,7 +280,11 @@ bool TinyGPS::term_complete()
       break;
     case COMBINE(_GPS_SENTENCE_GPRMC, 5): // Longitude
     case COMBINE(_GPS_SENTENCE_GPGGA, 4):
-      _new_longitude = parse_degrees();
+      if (_raw_enabled) {
+        _new_longitude = parse_degrees_raw();
+      } else {
+        _new_longitude = parse_degrees();
+      }
       break;
     case COMBINE(_GPS_SENTENCE_GPRMC, 6): // E/W
     case COMBINE(_GPS_SENTENCE_GPGGA, 5):

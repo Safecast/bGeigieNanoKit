@@ -50,7 +50,7 @@ public:
 
   static const float GPS_INVALID_F_ANGLE, GPS_INVALID_F_ALTITUDE, GPS_INVALID_F_SPEED;
 
-  TinyGPS();
+  TinyGPS(bool enable_raw = false);
   bool encode(char c); // process one character received from GPS
   TinyGPS &operator << (char c) {encode(c); return *this;}
 
@@ -120,6 +120,7 @@ private:
   byte _term_number;
   byte _term_offset;
   bool _gps_data_good;
+  bool _raw_enabled;
 
 #ifndef _GPS_NO_STATS
   // statistics
@@ -133,6 +134,7 @@ private:
   int from_hex(char a);
   unsigned long parse_decimal();
   unsigned long parse_degrees();
+  unsigned long parse_degrees_raw();
   bool term_complete();
   bool gpsisdigit(char c) { return c >= '0' && c <= '9'; }
   long gpsatol(const char *str);
