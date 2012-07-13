@@ -39,6 +39,7 @@
 
 // Definition flags -----------------------------------------------------------
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
+//#define USE_STATIC_GPS // for test only
 //#define USE_HARDWARE_COUNTER // pulse on digital pin5
 #define USE_OPENLOG // disable for debugging
 //#define USE_MEDIATEK // MTK3339 initialization
@@ -46,6 +47,7 @@
 #define USE_EEPROM_ID // use device id stored in EEPROM
 #define DEBUG // enable debug log output
 //#define DEBUG_DIAGNOSTIC
+
 #ifdef USE_HARDWARE_COUNTER
 #define USE_SLEEPMODE 
 #endif
@@ -121,8 +123,8 @@ static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Conn
 #endif
 
 // GpsBee settings ------------------------------------------------------------
-TinyGPS gps;
-#define GPS_INTERVAL 1000
+TinyGPS gps(true);
+#define GPS_INTERVAL 980
 char gps_status = VOID;
 static const int ledPin = GPS_LED_PIN;
 
@@ -142,6 +144,26 @@ static char pre[BUFFER_SZ];
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+
+#ifdef USE_STATIC_GPS
+#include <avr/pgmspace.h>
+// GPS test sentences
+prog_char strGPRMC[] PROGMEM = "$GPRMC,201547.000,A,3014.5527,N,09749.5808,W,0.24,163.05,040109,,*1A";
+prog_char strGPGGA[] PROGMEM = "$GPGGA,201548.000,3014.5529,N,09749.5808,W,1,07,1.5,225.6,M,-22.5,M,18.8,0000*78";
+prog_char *teststrs[2] = {strGPRMC, strGPGGA};
+
+static void sendstring(TinyGPS &gps, const PROGMEM char *str)
+{
+  while (true)
+  {
+    char c = pgm_read_byte_near(str++);
+    if (!c) break;
+    gps.encode(c);
+  }
+  gps.encode('\r');
+  gps.encode('\n');
+}
+#endif
 
 // Debug definitions ----------------------------------------------------------
 #ifdef DEBUG
@@ -185,9 +207,50 @@ ISR(WDT_vect)
     DEBUG_PRINTLN("WARNING: WDT Overrun");
   }
 }
+
+void enableSleepTimer(void) 
+{
+  cli();
+  wdt_reset();
+
+  // Setup WDT
+  // Clear the reset flag
+  MCUSR &= ~(1<<WDRF);
+  
+  // Set WDCE (4 clock cycles updates)
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+
+  // Set new watchdog timeout prescaler value
+  WDTCSR = 1<<WDP3; // 4.0 seconds
+  
+  // Enable the WD interrupt
+  WDTCSR |= _BV(WDIE);
+
+  sei();
+}
+
+void disableSleepTimer(void) 
+{
+  cli();
+  wdt_reset();
+
+  // Setup WDT
+  // Clear the reset flag
+  MCUSR &= ~(1<<WDRF);
+  
+  // Keep old prescaler setting to prevent unintentional time-out
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+  
+  // Disable the WD interrupt
+  WDTCSR |= 0x00;
+
+  sei();
+}
+
 void enterSleep(void)
 {
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+  power_all_disable();
+  set_sleep_mode(SLEEP_MODE_STANDBY); // keep oscillator active
   
   // Enable and enter sleep mode
   sleep_enable();
@@ -261,18 +324,7 @@ void setup()
 #endif
 
 #ifdef USE_SLEEPMODE
-  // Setup WDT
-  // Clear the reset flag
-  MCUSR &= ~(1<<WDRF);
-  
-  // Set WDCE (4 clock cycles updates)
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
-
-  // Set new watchdog timeout prescaler value
-  WDTCSR = 1<<WDP3; // 4.0 seconds
-  
-  // Enable the WD interrupt
-  WDTCSR |= _BV(WDIE);
+  enableSleepTimer();
 #endif
 
   DEBUG_PRINTLN("Setup completed.");
@@ -288,6 +340,7 @@ void loop()
 #ifdef USE_SLEEPMODE
   if(f_wdt == 1)
   {
+    disableSleepTimer();
 #endif
 
 #ifdef USE_SOFTGPS
@@ -295,9 +348,15 @@ void loop()
   gpsSerial.listen();
 #endif
   
-  // For one second we parse GPS data and report some key values
+  // For one second we parse GPS sentences
   for (unsigned long start = millis(); millis() - start < GPS_INTERVAL;)
   {
+#ifdef USE_STATIC_GPS
+    for (int i=0; i<2; ++i)
+    {
+      sendstring(gps, teststrs[i]);
+    }
+#else
 #ifdef USE_SOFTGPS
     while (gpsSerial.available())
     {
@@ -312,7 +371,13 @@ void loop()
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
     }
+#endif
   }
+
+#ifdef USE_SLEEPMODE
+  // Will wakeup in 4 seconds from now
+  enableSleepTimer();
+#endif
   
   if ((gpsReady) || (gps_status == AVAILABLE)) {
     digitalWrite(ledPin, HIGH);
@@ -321,8 +386,12 @@ void loop()
   }
 
   // generate CPM every TIME_INTERVAL seconds
-#ifdef USE_HARDWARE_COUNTER 
+#ifdef USE_HARDWARE_COUNTER
+#ifdef USE_SLEEPMODE
+  if (1) {
+#else
   if (hwc.available()) {
+#endif
 #else
   if (interruptCounterAvailable())  {
 #endif
@@ -554,15 +623,6 @@ unsigned long cpm_gen()
    return c_p_m;
 }
 
-/* Convert a coordinate from Degrees to DegreesMinutes (NMEA) */
-void convertGPStoNMEA(double coordinate, char *buf) {
-    double Degrees          = ( int )coordinate;   
-    double Minutes          = coordinate - Degrees;     
-    double DegreesMinutes   = Minutes * 60 + ( Degrees * 10 * 10 );   
-
-    dtostrf(DegreesMinutes, 0, 4, buf); // 4 decimal places
-}
-
 /* generate log filename */
 bool gps_gen_filename(TinyGPS &gps, char *buf) {
   int year = 2012;
@@ -587,12 +647,24 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   return true;
 }
 
+/* convert long integer from TinyGPS to string "xxxxx.xxxx" */
+static void get_coordinate_string(unsigned long val, char *buf)
+{
+  unsigned long left = 0;
+  unsigned long right = 0;
+
+  left = val/100000.0;
+  right = (val - left*100000)/10;
+  sprintf(buf, "%ld.%04ld", left, right);
+}
+
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
   int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
-  float flat = 0, flon = 0, faltitude = 0, fspeed = 0;
+  long int x = 0, y = 0;
+  float faltitude = 0, fspeed = 0;
   unsigned short nbsat = 0;
   unsigned long precission = 0;
   unsigned long age;
@@ -611,7 +683,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   if (TinyGPS::GPS_INVALID_AGE == age) {
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
-  gps.f_get_position(&flat, &flon, &age);
+  gps.get_position(&x, &y, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
     gps_status = VOID;
   } else {
@@ -623,10 +695,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   nbsat = gps.satellites();
   precission = gps.hdop();
 
-  convertGPStoNMEA(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, lat);
-  convertGPStoNMEA(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, lon);
-  if (flat < 0) NS = 'S';
-  if (flon < 0) WE = 'W';
+  if (x < 0) { NS = 'S'; x = -x;}
+  if (y < 0) { WE = 'W'; y = -y;}
+  get_coordinate_string(x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
+  get_coordinate_string(y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
 
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, alt);
   dtostrf(fspeed == TinyGPS::GPS_INVALID_F_SPEED ? 0.0 : fspeed, 0, 2, spd);
