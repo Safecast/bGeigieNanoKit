@@ -684,7 +684,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
   gps.get_position(&x, &y, &age);
-  if (TinyGPS::GPS_INVALID_AGE == age) {
+
+  if (!gps.status()) {
     gps_status = VOID;
   } else {
     gps_status = AVAILABLE;

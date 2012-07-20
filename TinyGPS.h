@@ -75,6 +75,9 @@ public:
   // horizontal dilution of precision in 100ths
   inline unsigned long hdop() { return _hdop; }
 
+  // status
+  inline bool status() { return _gps_data_good; }
+
   void f_get_position(float *latitude, float *longitude, unsigned long *fix_age = 0);
   void crack_datetime(int *year, byte *month, byte *day, 
     byte *hour, byte *minute, byte *second, byte *hundredths = 0, unsigned long *fix_age = 0);
