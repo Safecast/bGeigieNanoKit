@@ -38,6 +38,8 @@
 #include <EEPROM.h>
 
 // Definition flags -----------------------------------------------------------
+//#define USE_SSD1306
+//#define USE_SSD1306_DISTANCE
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
 //#define USE_STATIC_GPS // for test only
 //#define USE_HARDWARE_COUNTER // pulse on digital pin5
@@ -45,8 +47,11 @@
 //#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
 #define USE_EEPROM_ID // use device id stored in EEPROM
+
+#ifndef USE_SSD1306 // high memory usage
 #define DEBUG // enable debug log output
 //#define DEBUG_DIAGNOSTIC
+#endif
 
 #ifdef USE_HARDWARE_COUNTER
 #define USE_SLEEPMODE 
@@ -56,6 +61,7 @@
 #ifdef USE_HARDWARE_COUNTER
 // Pin assignment for version 1.0.1
 #warning Hardware counter is used !
+#define OLED_RESET 4
 #define MINIPRO_GPS_RX_PIN 6
 #define MINIPRO_GPS_TX_PIN 7
 #define OPENLOG_RX_PIN 8
@@ -64,6 +70,7 @@
 #else
 // Old Pin assignment for version 1.0.0
 #warning Interrupt counter is used !
+#define OLED_RESET 4
 #define MINIPRO_GPS_RX_PIN 5
 #define MINIPRO_GPS_TX_PIN 6
 #define OPENLOG_RX_PIN 7
@@ -73,10 +80,31 @@
 #define GPS_LED_PIN 13
 #define VOLTAGE_PIN A7
 
+// OLED settings --------------------------------------------------------------
+#ifdef USE_SSD1306
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+Adafruit_SSD1306 display(OLED_RESET);
+
+#if (SSD1306_LCDHEIGHT != 32)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
+
+#ifdef USE_SSD1306_DISTANCE
+bool gps_fix_first = true;
+float gps_last_lon = 0, gps_last_lat = 0;
+unsigned long int gps_distance = 0;
+#endif
+
+#endif
+
 // Geiger settings ------------------------------------------------------------
 #define TIME_INTERVAL 5000
 #define LINE_SZ 100
-#define BUFFER_SZ 16
+#define BUFFER_SZ 12
+#define STRBUFFER_SZ 32
 #define NX 12
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
@@ -99,6 +127,7 @@ char geiger_status = VOID;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
+static char strbuffer[STRBUFFER_SZ];
 
 // geiger id
 char dev_id[BMRDD_ID_LEN+1] = {'2', '0', '0', 0};  // device id (default 200)
@@ -115,16 +144,27 @@ HardwareCounter hwc(COUNTER_TIMER1, TIME_INTERVAL);
 #define COUNTER_INTERRUPT 0 // 0 = dpin2, 1 = dpin3
 #endif
 
+#ifdef USE_HARDWARE_COUNTER
+#ifdef USE_SLEEPMODE
+#define IS_READY (1)
+#else
+#define IS_READY (hwc.available())
+#endif
+#else
+#define IS_READY (interruptCounterAvailable())
+#endif
+
 // OpenLog settings -----------------------------------------------------------
 #ifdef USE_OPENLOG
 #define OPENLOG_RETRY 200
 SoftwareSerial OpenLog(OPENLOG_RX_PIN, OPENLOG_TX_PIN); //Connect TXO of OpenLog to pin 8, RXI to pin 7
 static const int resetOpenLog = OPENLOG_RST_PIN; //This pin resets OpenLog. Connect pin 9 to pin GRN on OpenLog.
 #endif
+bool openlog_ready = false;
 
 // GpsBee settings ------------------------------------------------------------
 TinyGPS gps(true);
-#define GPS_INTERVAL 980
+#define GPS_INTERVAL 1000
 char gps_status = VOID;
 static const int ledPin = GPS_LED_PIN;
 
@@ -135,10 +175,6 @@ SoftwareSerial gpsSerial(MINIPRO_GPS_RX_PIN, MINIPRO_GPS_TX_PIN);
 // Gps data buffers
 static char lat[BUFFER_SZ];
 static char lon[BUFFER_SZ];
-static char alt[BUFFER_SZ];
-static char spd[BUFFER_SZ];
-static char sat[BUFFER_SZ];
-static char pre[BUFFER_SZ];
 
 // MTK33x9 chipset
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
@@ -148,9 +184,9 @@ static char pre[BUFFER_SZ];
 #ifdef USE_STATIC_GPS
 #include <avr/pgmspace.h>
 // GPS test sentences
-prog_char strGPRMC[] PROGMEM = "$GPRMC,201547.000,A,3014.5527,N,09749.5808,W,0.24,163.05,040109,,*1A";
-prog_char strGPGGA[] PROGMEM = "$GPGGA,201548.000,3014.5529,N,09749.5808,W,1,07,1.5,225.6,M,-22.5,M,18.8,0000*78";
-prog_char *teststrs[2] = {strGPRMC, strGPGGA};
+char strGPRMC[] PROGMEM = "$GPRMC,201547.000,A,3014.5527,N,09749.5808,W,0.24,163.05,040109,,*1A";
+char strGPGGA[] PROGMEM = "$GPGGA,201548.000,3014.5529,N,09749.5808,W,1,07,1.5,225.6,M,-22.5,M,18.8,0000*78";
+char *teststrs[2] = {strGPRMC, strGPGGA};
 
 static void sendstring(TinyGPS &gps, const PROGMEM char *str)
 {
@@ -186,6 +222,10 @@ void gps_program_settings();
 #ifdef USE_EEPROM_ID
 void setEEPROMDevId(char * id);
 void getEEPROMDevId();
+#endif
+#ifdef USE_SSD1306
+void geigerStatusDisplay(int cpm, char * time, int offset);
+void printOLEDFloat(double number, int digits);
 #endif
 float read_voltage(int pin);
 
@@ -327,6 +367,11 @@ void setup()
   enableSleepTimer();
 #endif
 
+#ifdef USE_SSD1306
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.display(); // show splashscreen
+#endif
+
   DEBUG_PRINTLN("Setup completed.");
 }
 
@@ -349,7 +394,7 @@ void loop()
 #endif
   
   // For one second we parse GPS sentences
-  for (unsigned long start = millis(); millis() - start < GPS_INTERVAL;)
+  for (unsigned long start = millis(); (millis() - start < GPS_INTERVAL) and !IS_READY;)
   {
 #ifdef USE_STATIC_GPS
     for (int i=0; i<2; ++i)
@@ -386,15 +431,7 @@ void loop()
   }
 
   // generate CPM every TIME_INTERVAL seconds
-#ifdef USE_HARDWARE_COUNTER
-#ifdef USE_SLEEPMODE
-  if (1) {
-#else
-  if (hwc.available()) {
-#endif
-#else
-  if (interruptCounterAvailable())  {
-#endif
+  if IS_READY {
       unsigned long cpm=0, cpb=0;
 
 #ifndef USE_SLEEPMODE
@@ -525,6 +562,7 @@ void setupOpenLog() {
     logfile_ready = true;
   } else {
     DEBUG_PRINTLN(" - ready");
+    openlog_ready = true;
   }
 }
 
@@ -648,7 +686,7 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
 }
 
 /* convert long integer from TinyGPS to string "xxxxx.xxxx" */
-static void get_coordinate_string(unsigned long val, char *buf)
+void get_coordinate_string(unsigned long val, char *buf)
 {
   unsigned long left = 0;
   unsigned long right = 0;
@@ -657,6 +695,17 @@ static void get_coordinate_string(unsigned long val, char *buf)
   right = (val - left*100000)/10;
   sprintf(buf, "%ld.%04ld", left, right);
 }
+
+#ifdef USE_SSD1306_DISTANCE
+/* convert long integer from TinyGPS to float WGS84 degrees */
+float get_wgs84_coordinate(unsigned long val)
+{
+  double result = 0.0;
+  result = val/10000000.0;
+  result = ((result-(int)result)/60.0)*100 + (int)result;
+  return (float)result;
+}
+#endif
 
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
@@ -674,23 +723,22 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
-  memset(alt, 0, BUFFER_SZ);
-  memset(spd, 0, BUFFER_SZ);
-  memset(sat, 0, BUFFER_SZ);
-  memset(pre, 0, BUFFER_SZ);
+  memset(strbuffer, 0, STRBUFFER_SZ);
   
+  // get GPS date
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
+  
+  // get GPS position, altitude and speed
   gps.get_position(&x, &y, &age);
 
   if (!gps.status()) {
     gps_status = VOID;
   } else {
     gps_status = AVAILABLE;
-  }
-  
+  } 
   faltitude = gps.f_altitude();
   fspeed = gps.f_speed_kmph();
   nbsat = gps.satellites();
@@ -700,15 +748,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   if (y < 0) { WE = 'W'; y = -y;}
   get_coordinate_string(x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
   get_coordinate_string(y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
-
-  dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, alt);
-  dtostrf(fspeed == TinyGPS::GPS_INVALID_F_SPEED ? 0.0 : fspeed, 0, 2, spd);
-  sprintf(sat, "%d", nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
-  sprintf(pre, "%ld", precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
+  dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, strbuffer);
   
+  // prepare the log entry
   memset(buf, 0, LINE_SZ);
-
-  sprintf(buf, "$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%s,%s",  \
+  sprintf(buf, "$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d",  \
               hdr, \
               dev_id, \
               year, month, day,  \
@@ -719,10 +763,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
               geiger_status, \
               lat, NS,\
               lon, WE,\
-              alt, \
+              strbuffer, \
               gps_status, \
-              pre, \
-              sat);
+              precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission, \
+              nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
 
    len = strlen(buf);
    buf[len] = '\0';
@@ -735,6 +779,110 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
      sprintf(buf + len, "*0%X", (int)chk);
    else
      sprintf(buf + len, "*%X", (int)chk);
+       
+#ifdef USE_SSD1306
+#ifdef USE_SSD1306_DISTANCE
+   // compute distance
+   if (gps.status()) {
+     int trigger_dist = 25;
+     float flat = get_wgs84_coordinate(x);
+     float flon = get_wgs84_coordinate(y);
+    
+     if(fspeed > 5) 
+       // fpspeed/3.6 * 5s = 6.94 m
+       trigger_dist = 5;
+     if(fspeed > 10) 
+       trigger_dist = 10;
+     if(fspeed > 15) 
+       trigger_dist = 20;
+    
+     if(gps_fix_first) 
+     {
+       gps_last_lat = flat;
+       gps_last_lon = flon;
+       gps_fix_first = false;
+     } 
+     else 
+     {
+       // Distance in meters
+       unsigned long int dist = (long int)TinyGPS::distance_between(flat, flon, gps_last_lat, gps_last_lon);
+
+       if (dist > trigger_dist)   
+       {
+         gps_distance += dist;   
+         gps_last_lat = flat;
+         gps_last_lon = flon;
+       }
+     }    
+   }
+#endif
+
+   // ready to display the data on screen
+   display.clearDisplay();
+   int offset = 0;
+   
+   // Display date
+   sprintf(strbuffer, "%02d/%02d %02d:%02d:%02d",  \
+              day, month, \
+              hour, minute, second);
+   display.setCursor(2, offset+24); // textsize*8 
+   display.setTextSize(1);
+   display.setTextColor(WHITE);
+   display.println(strbuffer);
+ 
+   // Display CPM
+   display.setCursor(2, offset);
+   display.setTextSize(2);
+   display.setTextColor(WHITE);
+   display.print("CPM ");
+   display.println(cpm);
+
+   // Display SD, GPS and Geiger states
+   if (openlog_ready) {
+     display.setTextColor(WHITE);
+   } else {
+     display.setTextColor(BLACK, WHITE); // 'inverted' text
+   }
+   display.setCursor(116, offset);
+   display.setTextSize(1);
+   if (!gps.status()) {
+     display.println(gps_status);
+   } else {
+     sprintf(strbuffer, "%X", nbsat);
+     display.println(strbuffer);
+   }
+   display.setCursor(122, offset);
+   display.println(geiger_status);
+ 
+   // Display uSv/h
+   dtostrf((float)(cpm/334.0), 0, 3, strbuffer);
+   display.setTextColor(WHITE);
+   display.setTextSize(1);
+   display.setCursor(2, offset+16); // textsize*8 
+   display.print(strbuffer);
+   display.println(" uSv/h");
+   
+#ifdef USE_SSD1306_DISTANCE
+   // Display distance
+   dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
+   display.setTextColor(WHITE);
+   display.setTextSize(1);
+   display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8 
+   display.print(strbuffer);
+   display.println("km");
+#endif
+   
+   // Display altidude
+   if (gps.status()) {
+       dtostrf(faltitude, 0, 0, strbuffer);
+       display.setTextSize(1);
+       display.setCursor(122-(strlen(strbuffer)*6), offset+24); // textsize*8 
+       display.print(strbuffer);
+       display.println("m");
+   }
+      
+   display.display();
+#endif
 
    return (gps_status == AVAILABLE);
 }
