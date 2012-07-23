@@ -34,8 +34,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <avr/wdt.h>
-#include "TinyGPS.h"
 #include <EEPROM.h>
+#include "TinyGPS.h"
 
 // Definition flags -----------------------------------------------------------
 //#define USE_SSD1306
@@ -112,8 +112,8 @@ unsigned long int gps_distance = 0;
 #define BMRDD_ID_LEN 3
 
 // log file headers
+#define LOGFILE_HEADER "# NEW LOG\n# format=1.0.0nano\n"
 char hdr[6] = "BNRDD";  // header for sentence
-char fileHeader[] = "# NEW LOG\n# format=1.0.0nano\n";
 char logfile_name[13];  // placeholder for filename
 bool logfile_ready = false;
 char logfile_ext[] = ".log";
@@ -210,6 +210,15 @@ static void sendstring(TinyGPS &gps, const PROGMEM char *str)
   #define DEBUG_PRINTLN(x)
 #endif
 
+int availableMemory() 
+{
+  int size = 1024;
+  byte *buf;
+  while ((buf = (byte *) malloc(--size)) == NULL);
+  free(buf);
+  return size;
+}
+
 // Function definitions ---------------------------------------------------------
 unsigned long cpm_gen();
 bool gps_gen_filename(TinyGPS &gps, char *buf);
@@ -222,10 +231,6 @@ void gps_program_settings();
 #ifdef USE_EEPROM_ID
 void setEEPROMDevId(char * id);
 void getEEPROMDevId();
-#endif
-#ifdef USE_SSD1306
-void geigerStatusDisplay(int cpm, char * time, int offset);
-void printOLEDFloat(double number, int digits);
 #endif
 float read_voltage(int pin);
 
@@ -372,6 +377,8 @@ void setup()
   display.display(); // show splashscreen
 #endif
 
+  Serial.println(availableMemory());
+
   DEBUG_PRINTLN("Setup completed.");
 }
 
@@ -487,9 +494,10 @@ void loop()
            DEBUG_PRINTLN("Create new logfile.");
            createFile(logfile_name);
            // print header to serial
-           OpenLog.print(fileHeader);
+           sprintf_P(strbuffer, PSTR(LOGFILE_HEADER));
+           OpenLog.print(strbuffer);
 #endif
-           DEBUG_PRINT(fileHeader);
+           DEBUG_PRINT(strbuffer);
          }
       }
 
@@ -637,7 +645,7 @@ void createFile(char *fileName) {
 #endif
 
 /* compute check sum of N bytes in array s */
-char checksum(char *s, int N)
+static char checksum(char *s, int N)
 {
   int i = 0;
   char chk = s[0];
@@ -666,7 +674,6 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   int year = 2012;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   unsigned long age;
-  char temp[8];
 
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
@@ -676,24 +683,24 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   // Create the filename for that drive
   strcpy(buf, dev_id);
   strcat(buf, "-");
-  sprintf(temp, "%02d",month); 
-  strncat(buf, temp, 2);
-  sprintf(temp, "%02d",day);
-  strncat(buf, temp, 2);
+  sprintf_P(strbuffer, PSTR("%02d"),month); 
+  strncat(buf, strbuffer, 2);
+  sprintf_P(strbuffer, PSTR("%02d"),day);
+  strncat(buf, strbuffer, 2);
   strcpy(buf+8, logfile_ext);
 
   return true;
 }
 
 /* convert long integer from TinyGPS to string "xxxxx.xxxx" */
-void get_coordinate_string(unsigned long val, char *buf)
+static void get_coordinate_string(unsigned long val, char *buf)
 {
   unsigned long left = 0;
   unsigned long right = 0;
 
   left = val/100000.0;
   right = (val - left*100000)/10;
-  sprintf(buf, "%ld.%04ld", left, right);
+  sprintf_P(buf, PSTR("%ld.%04ld"), left, right);
 }
 
 #ifdef USE_SSD1306_DISTANCE
@@ -752,7 +759,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
-  sprintf(buf, "$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d",  \
+  sprintf_P(buf, PSTR("$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d"),  \
               hdr, \
               dev_id, \
               year, month, day,  \
@@ -776,9 +783,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
    // add checksum to end of line before sending
    if (chk < 16)
-     sprintf(buf + len, "*0%X", (int)chk);
+     sprintf_P(buf + len, PSTR("*0%X"), (int)chk);
    else
-     sprintf(buf + len, "*%X", (int)chk);
+     sprintf_P(buf + len, PSTR("*%X"), (int)chk);
        
 #ifdef USE_SSD1306
 #ifdef USE_SSD1306_DISTANCE
@@ -822,7 +829,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    int offset = 0;
    
    // Display date
-   sprintf(strbuffer, "%02d/%02d %02d:%02d:%02d",  \
+   sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
               day, month, \
               hour, minute, second);
    display.setCursor(2, offset+24); // textsize*8 
