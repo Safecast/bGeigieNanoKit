@@ -40,6 +40,7 @@
 // Definition flags -----------------------------------------------------------
 //#define USE_SSD1306
 //#define USE_SSD1306_DISTANCE
+//#define USE_SSD1306_CARDINAL
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
 //#define USE_STATIC_GPS // for test only
 //#define USE_HARDWARE_COUNTER // pulse on digital pin5
@@ -180,6 +181,9 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+
+#define SBAS_ENABLE "$PMTK313,1*2E\r\n"
+#define DGPS_WAAS_ON "$PMTK301,2*2E\r\n" # 2 = WAAS
 
 #ifdef USE_STATIC_GPS
 #include <avr/pgmspace.h>
@@ -868,7 +872,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    display.setCursor(2, offset+16); // textsize*8 
    display.print(strbuffer);
    display.println(" uSv/h");
-   
+
 #ifdef USE_SSD1306_DISTANCE
    // Display distance
    dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
@@ -881,6 +885,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    
    // Display altidude
    if (gps.status()) {
+#ifdef USE_SSD1306_CARDINAL
+       sprintf(strbuffer, "%s", gps.f_course() == TinyGPS::GPS_INVALID_F_ANGLE ? "***" : TinyGPS::cardinal(gps.f_course()));
+       display.setTextSize(1);
+       display.setCursor(128-(strlen(strbuffer)*6), offset+8); // textsize*8 
+       display.println(strbuffer);
+#endif
+
        dtostrf(faltitude, 0, 0, strbuffer);
        display.setTextSize(1);
        display.setCursor(122-(strlen(strbuffer)*6), offset+24); // textsize*8 
@@ -900,6 +911,8 @@ void gps_program_settings()
 #ifdef USE_MEDIATEK
   gpsSerial.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   gpsSerial.println(PMTK_SET_NMEA_UPDATE_1HZ);
+  gpsSerial.println(SBAS_ENABLE);
+  gpsSerial.println(DGPS_WAAS_ON);
 #endif
 
 #ifdef USE_SKYTRAQ
