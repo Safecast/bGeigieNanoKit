@@ -140,22 +140,21 @@ unsigned long TinyGPS::parse_decimal()
   return isneg ? -ret : ret;
 }
 
-unsigned long TinyGPS::parse_degrees()
-{
+unsigned long TinyGPS::parse_degrees() {
   char *p;
   unsigned long left = gpsatol(_term);
-  unsigned long tenk_minutes = (left % 100UL) * 10000UL;
-  for (p=_term; gpsisdigit(*p); ++p);
-  if (*p == '.')
+  unsigned long tenk_minutes = (left % 100UL) * 100000UL;
+  for (p = _term; gpsisdigit(*p); ++p);
+  if (*p == '.') 
   {
-    unsigned long mult = 1000;
+    unsigned long mult = 10000;
     while (gpsisdigit(*++p))
     {
       tenk_minutes += mult * (*p - '0');
       mult /= 10;
     }
   }
-  return (left / 100) * 100000 + tenk_minutes / 6;
+  return (left / 100) * 1000000 + (tenk_minutes + 5) / 6;
 }
 
 unsigned long TinyGPS::parse_degrees_raw()
@@ -408,8 +407,8 @@ void TinyGPS::f_get_position(float *latitude, float *longitude, unsigned long *f
 {
   long lat, lon;
   get_position(&lat, &lon, fix_age);
-  *latitude = lat == GPS_INVALID_ANGLE ? GPS_INVALID_F_ANGLE : (lat / 100000.0);
-  *longitude = lat == GPS_INVALID_ANGLE ? GPS_INVALID_F_ANGLE : (lon / 100000.0);
+  *latitude = lat == GPS_INVALID_ANGLE ? GPS_INVALID_F_ANGLE : (lat / 1000000.0);
+  *longitude = lat == GPS_INVALID_ANGLE ? GPS_INVALID_F_ANGLE : (lon / 1000000.0);
 }
 
 void TinyGPS::crack_datetime(int *year, byte *month, byte *day, 
