@@ -181,7 +181,6 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
-
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
 #define DGPS_WAAS_ON "$PMTK301,2*2E\r\n" # 2 = WAAS
 
@@ -214,29 +213,24 @@ static void sendstring(TinyGPS &gps, const PROGMEM char *str)
   #define DEBUG_PRINTLN(x)
 #endif
 
-int availableMemory() 
-{
-  int size = 1024;
-  byte *buf;
-  while ((buf = (byte *) malloc(--size)) == NULL);
-  free(buf);
-  return size;
-}
-
 // Function definitions ---------------------------------------------------------
-unsigned long cpm_gen();
-bool gps_gen_filename(TinyGPS &gps, char *buf);
-bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
+// Atmel Tips and Tricks: 3.6 Tip #6 – Access types: Static
+static unsigned long cpm_gen();
+static bool gps_gen_filename(TinyGPS &gps, char *buf);
+static bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
+static char checksum(char *s, int N);
 #ifdef USE_OPENLOG
-void setupOpenLog();
-void createFile(char *fileName);
+static void setupOpenLog();
+static void createFile(char *fileName);
 #endif
-void gps_program_settings();
+static void gps_program_settings();
 #ifdef USE_EEPROM_ID
-void setEEPROMDevId(char * id);
-void getEEPROMDevId();
+static void setEEPROMDevId(char * id);
+static void getEEPROMDevId();
 #endif
-float read_voltage(int pin);
+static float read_voltage(int pin);
+static int availableMemory();
+static unsigned long elapsedTime(unsigned long startTime);
 
 // Sleep mode -----------------------------------------------------------------
 #ifdef USE_SLEEPMODE
@@ -405,7 +399,7 @@ void loop()
 #endif
   
   // For one second we parse GPS sentences
-  for (unsigned long start = millis(); (millis() - start < GPS_INTERVAL) and !IS_READY;)
+  for (unsigned long start = millis(); (elapsedTime(start) < GPS_INTERVAL) and !IS_READY;)
   {
 #ifdef USE_STATIC_GPS
     for (int i=0; i<2; ++i)
@@ -546,6 +540,17 @@ void loop()
 // Utility functions
 // ----------------------------------------------------------------------------
 
+/* calculate elapsed time. this takes into account rollover */
+unsigned long elapsedTime(unsigned long startTime) {
+  unsigned long stopTime = millis();
+
+  if (startTime >= stopTime) {
+    return startTime - stopTime;
+  } else {
+    return (ULONG_MAX - (startTime - stopTime));
+  }
+}
+
 #ifdef USE_OPENLOG
 /* setups up the software serial, resets OpenLog */
 void setupOpenLog() {
@@ -649,7 +654,7 @@ void createFile(char *fileName) {
 #endif
 
 /* compute check sum of N bytes in array s */
-static char checksum(char *s, int N)
+char checksum(char *s, int N)
 {
   int i = 0;
   char chk = s[0];
@@ -697,7 +702,7 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
 }
 
 /* convert long integer from TinyGPS to string "xxxxx.xxxx" */
-static void get_coordinate_string(unsigned long val, char *buf)
+void get_coordinate_string(unsigned long val, char *buf)
 {
   unsigned long left = 0;
   unsigned long right = 0;
@@ -1011,3 +1016,12 @@ float read_voltage(int pin)
   return 1.1*analogRead(pin)*(3300/1024);
 }
 #endif
+
+int availableMemory() 
+{
+  int size = 1024;
+  byte *buf;
+  while ((buf = (byte *) malloc(--size)) == NULL);
+  free(buf);
+  return size;
+}
