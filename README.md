@@ -9,6 +9,7 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * [LND-7317][4] geiger pancake with Medcom iRover HV board
 * [Monochrome 128x64][2] OLED screen
 * 3.7V 1000mAh Lithium battery
+* [Pelican 1010][9] micro-case
 
 # Assembly
 
@@ -29,6 +30,7 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 | D10 | TX pin of the OpenLog |
 | D11 | RX pin of the OpenLog |
 | D12 | GRN pin of the OpenLog |
+
 
 # Power consumption
 
@@ -122,3 +124,4 @@ To make sure all of the NMEA sentences can be received correctly, we will need t
   [6]: http://arduiniana.org/libraries/tinygps/ "TinyGPS"
   [7]: https://www.adafruit.com/products/746 "Ultimate GPS"
   [8]: http://ed.am/dev/make/arduino-mk "Arduino Makefile"
+  [9]: http://www.pelican.com/cases_detail.php?Case=1010 "Pelican 1010"
