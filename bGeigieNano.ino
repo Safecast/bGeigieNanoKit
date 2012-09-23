@@ -38,9 +38,9 @@
 #include "TinyGPS.h"
 
 // Definition flags -----------------------------------------------------------
-//#define USE_SSD1306
-//#define USE_SSD1306_DISTANCE
-//#define USE_SSD1306_CARDINAL
+#define USE_SSD1306
+#define USE_SSD1306_DISTANCE
+#define USE_SSD1306_CARDINAL
 #define USE_SOFTGPS // use software serial for GPS (Arduino Pro Mini)
 //#define USE_STATIC_GPS // for test only
 //#define USE_HARDWARE_COUNTER // pulse on digital pin5
@@ -48,8 +48,11 @@
 //#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
 #define USE_EEPROM_ID // use device id stored in EEPROM
+#define USE_NANOKIT // use the nano kit configuration
 
-#ifndef USE_SSD1306 // high memory usage
+#define CPM_FACTOR 334.0 // LND 7317
+
+#ifndef USE_SSD1306 // high memory usage (avoid logs)
 #define DEBUG // enable debug log output
 //#define DEBUG_DIAGNOSTIC
 #endif
@@ -59,6 +62,20 @@
 #endif
 
 // PINs definition ------------------------------------------------------------
+#ifdef USE_NANOKIT
+#warning NANO KIT with OLED screen used !
+#define OLED_SPI_MODE // SPI mode enabled
+#define OLED_CLK 7
+#define OLED_DATA 6
+#define OLED_DC 5
+#define OLED_CS 4
+#define OLED_RESET 3
+#define MINIPRO_GPS_RX_PIN 8
+#define MINIPRO_GPS_TX_PIN 9
+#define OPENLOG_RX_PIN 10
+#define OPENLOG_TX_PIN 11
+#define OPENLOG_RST_PIN 12
+#else
 #ifdef USE_HARDWARE_COUNTER
 // Pin assignment for version 1.0.1
 #warning Hardware counter is used !
@@ -78,8 +95,17 @@
 #define OPENLOG_TX_PIN 8
 #define OPENLOG_RST_PIN 9
 #endif
+#endif
+
 #define GPS_LED_PIN 13
+
+// Voltage divider
+// GND -- R2 --A7 -- R1 -- VCC
+// https://en.wikipedia.org/wiki/Voltage_divider
 #define VOLTAGE_PIN A7
+#define VOLTAGE_R1 9000
+#define VOLTAGE_R2 1000
+static float voltage_divider = (float)VOLTAGE_R2 / (VOLTAGE_R1 + VOLTAGE_R2);
 
 // OLED settings --------------------------------------------------------------
 #ifdef USE_SSD1306
@@ -87,7 +113,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#ifdef OLED_SPI_MODE
+Adafruit_SSD1306 display(OLED_DATA, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+#else
 Adafruit_SSD1306 display(OLED_RESET);
+#endif
 
 #if (SSD1306_LCDHEIGHT != 32)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -871,7 +901,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    display.println(geiger_status);
  
    // Display uSv/h
-   dtostrf((float)(cpm/334.0), 0, 3, strbuffer);
+   dtostrf((float)(cpm/CPM_FACTOR), 0, 3, strbuffer);
    display.setTextColor(WHITE);
    display.setTextSize(1);
    display.setCursor(2, offset+16); // textsize*8 
