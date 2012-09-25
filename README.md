@@ -13,10 +13,12 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 
 # Assembly
 
-![bGeigieNano](https://github.com/bidouilles/bGeigieNano/raw/master/assembly/bGeigieNano_bb.jpg)
+![bGeigieNano](https://raw.github.com/bidouilles/bGeigieNano/bGeigieNanoKit/assembly/bGeigieNanoKit_bb_600.jpg)
 
 ## Pins assignment
 
+| Arduino Fio pin | Target pin |
+| :-----------: | :-----------: |
 | VCC | VCC pin of the GPS and OpenLog |
 | GND | GND pin of the GPS and OpenLog |
 | D2 | pulse pin from the iRover |
@@ -30,7 +32,6 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 | D10 | TX pin of the OpenLog |
 | D11 | RX pin of the OpenLog |
 | D12 | GRN pin of the OpenLog |
-
 
 # Power consumption
 
