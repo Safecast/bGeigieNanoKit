@@ -1,6 +1,6 @@
-# Welcome to bGeigie Nano project
+# Welcome to bGeigie Nano Kit project
 
-This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1040.
+This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1010.
 
 # Requirements
 * [Arduino Fio][3]
