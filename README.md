@@ -7,8 +7,8 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * [OpenLog][1]
 * Adafruit [Ultimate GPS][7]
 * [LND-7317][4] geiger pancake with Medcom iRover HV board
-* [Monochrome 128x64][2] OLED screen
-* 3.7V 1000mAh Lithium battery
+* [Monochrome 128x32][2] OLED screen
+* 3.7V 1300mAh Lithium battery
 * [Pelican 1010][9] micro-case
 
 # Assembly
@@ -38,19 +38,19 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 * **Fio**: 0.045mA sleep, 6mA at run time
 * **OpenLog**: 2mA idle, 6mA at maximum recording rate
 * **Adafruit Ultimate GPS**: 25mA acquisition, 20mA tracking
+* **Monochrome OLED 128x32 0.91"**: 4mA 50% turn-on, 7.8mA 100% turn-on
 
 ## Estimation
-The total current used at run time can be estimated around 32mA (= 6+6+20) per second which will result in a consumption of 0.0088mAh (= 32mA/3600). So
-the total log duration if using a battery of 850mAh will be (850/.0088)/3600 = 26.56 = **26h33m**
+The total current used at run time can be estimated around 36mA (= 6+6+20+4) per second which will result in a consumption of 0.01mAh (= 36mA/3600). So
+the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 36.11 = **36h06m**
 
 ## Summary table
 
-| Battery capacity (mAh) | Estimated log duration Ultimate GPS (days hh:mm) |
+| Battery capacity (mAh) | Estimated log duration (days hh:mm) |
 | :-----------: | :-----------: |
-| 850 | 1d 02:33 |
-| 1000 | 1d 07:15 |
-| 2000 |  2d 14:30 |
-| 6000 |  7d 19:30 |
+| 1300 | 1d 12:06 |
+| 2600 |  3d 00:13 |
+| 6600 |  7d 15:19 |
 
 # Build process
 ## Using the Makefile
@@ -118,7 +118,7 @@ To make sure all of the NMEA sentences can be received correctly, we will need t
 
 
   [1]: https://github.com/sparkfun/OpenLog "OpenLog"
-  [2]: http://adafruit.com/products/326 "Monochrome 128x64 OLED"
+  [2]: https://www.adafruit.com/products/661 "Monochrome 128x32 OLED"
   [3]: https://www.sparkfun.com/products/10116 "Arduino Fio"
   [4]: http://www.lndinc.com/products/17/ "LND-7317"
   [5]: https://github.com/fakufaku/SafecastBGeigie-firmware "SafecastBGeigie-firmware"
