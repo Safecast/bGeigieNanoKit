@@ -19,8 +19,8 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 
 | Arduino Fio pin | Target pin |
 | :-----------: | :-----------: |
-| VCC | VCC pin of the GPS and OpenLog |
-| GND | GND pin of the GPS and OpenLog |
+| VCC | VCC or Vin pin of the GPS, OpenLog, OLED and iRover (3.3v)|
+| GND | GND pin of the GPS, OpenLog, OLED and iRover |
 | D2 | pulse pin from the iRover |
 | D3 | OLED RST pin |
 | D4 | OLED CS pin |
