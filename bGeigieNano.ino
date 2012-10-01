@@ -45,12 +45,12 @@
 //#define USE_STATIC_GPS // for test only
 //#define USE_HARDWARE_COUNTER // pulse on digital pin5
 #define USE_OPENLOG // disable for debugging
-//#define USE_MEDIATEK // MTK3339 initialization
+//#define WAIT_GPS_FOR_LOG
+#define USE_MEDIATEK // MTK3339 initialization
 //#define USE_SKYTRAQ // SkyTraq Venus 6 initialization
 #define USE_EEPROM_ID // use device id stored in EEPROM
-#define USE_NANOKIT // use the nano kit configuration
-
-#define CPM_FACTOR 334.0 // LND 7317
+#define USE_EEPROM_DOSE // use total dose stored in EEPROM
+#define USE_NANOKIT_PIN // use the nano kit configuration
 
 #ifndef USE_SSD1306 // high memory usage (avoid logs)
 #define DEBUG // enable debug log output
@@ -58,11 +58,11 @@
 #endif
 
 #ifdef USE_HARDWARE_COUNTER
-#define USE_SLEEPMODE 
+#define USE_SLEEPMODE
 #endif
 
 // PINs definition ------------------------------------------------------------
-#ifdef USE_NANOKIT
+#ifdef USE_NANOKIT_PIN
 #warning NANO KIT with OLED screen used !
 #define OLED_SPI_MODE // SPI mode enabled
 #define OLED_CLK 7
@@ -132,6 +132,7 @@ unsigned long int gps_distance = 0;
 #endif
 
 // Geiger settings ------------------------------------------------------------
+#define CPM_FACTOR 334.0 // LND 7317 is default
 #define TIME_INTERVAL 5000
 #define LINE_SZ 100
 #define BUFFER_SZ 12
@@ -141,6 +142,7 @@ unsigned long int gps_distance = 0;
 #define VOID      'V'  // indicates geiger data not ready (void)
 #define BMRDD_EEPROM_ID 100
 #define BMRDD_ID_LEN 3
+#define BMRDD_EEPROM_DOSE 200
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format=1.0.0nano\n"
@@ -155,6 +157,16 @@ unsigned long reg_index = 0;
 unsigned long total_count = 0;
 int str_count = 0;
 char geiger_status = VOID;
+unsigned long cpm_factor = CPM_FACTOR;
+
+#ifdef USE_EEPROM_DOSE
+// geiger dose
+struct dose_t {
+  unsigned long total_count;
+  unsigned long total_time;
+} dose;
+#define EEPROM_DOSE_WRITETIME 3600 // write every hours (eeprom ~ 100000 cycles -> ~ 11 years)
+#endif
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
@@ -212,7 +224,7 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
-#define DGPS_WAAS_ON "$PMTK301,2*2E\r\n" # 2 = WAAS
+#define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
 
 #ifdef USE_STATIC_GPS
 #include <avr/pgmspace.h>
@@ -251,6 +263,7 @@ static bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, uns
 static char checksum(char *s, int N);
 #ifdef USE_OPENLOG
 static void setupOpenLog();
+static void loadConfig(char *fileName);
 static void createFile(char *fileName);
 #endif
 static void gps_program_settings();
@@ -261,6 +274,28 @@ static void getEEPROMDevId();
 static float read_voltage(int pin);
 static int availableMemory();
 static unsigned long elapsedTime(unsigned long startTime);
+
+#ifdef USE_EEPROM_DOSE
+// Write a template value into EEPROM address [ee]
+template <class T> int EEPROM_writeAnything(int ee, const T& value)
+{
+    const byte* p = (const byte*)(const void*)&value;
+    unsigned int i;
+    for (i = 0; i < sizeof(value); i++)
+          EEPROM.write(ee++, *p++);
+    return i;
+}
+
+// Read a template value from EEPROM address [ee]
+template <class T> int EEPROM_readAnything(int ee, T& value)
+{
+    byte* p = (byte*)(void*)&value;
+    unsigned int i;
+    for (i = 0; i < sizeof(value); i++)
+          *p++ = EEPROM.read(ee++);
+    return i;
+}
+#endif
 
 // Sleep mode -----------------------------------------------------------------
 #ifdef USE_SLEEPMODE
@@ -281,7 +316,7 @@ ISR(WDT_vect)
   }
 }
 
-void enableSleepTimer(void) 
+void enableSleepTimer(void)
 {
   cli();
   wdt_reset();
@@ -289,20 +324,20 @@ void enableSleepTimer(void)
   // Setup WDT
   // Clear the reset flag
   MCUSR &= ~(1<<WDRF);
-  
+
   // Set WDCE (4 clock cycles updates)
   WDTCSR |= (1<<WDCE) | (1<<WDE);
 
   // Set new watchdog timeout prescaler value
   WDTCSR = 1<<WDP3; // 4.0 seconds
-  
+
   // Enable the WD interrupt
   WDTCSR |= _BV(WDIE);
 
   sei();
 }
 
-void disableSleepTimer(void) 
+void disableSleepTimer(void)
 {
   cli();
   wdt_reset();
@@ -310,10 +345,10 @@ void disableSleepTimer(void)
   // Setup WDT
   // Clear the reset flag
   MCUSR &= ~(1<<WDRF);
-  
+
   // Keep old prescaler setting to prevent unintentional time-out
   WDTCSR |= (1<<WDCE) | (1<<WDE);
-  
+
   // Disable the WD interrupt
   WDTCSR |= 0x00;
 
@@ -324,11 +359,11 @@ void enterSleep(void)
 {
   power_all_disable();
   set_sleep_mode(SLEEP_MODE_STANDBY); // keep oscillator active
-  
+
   // Enable and enter sleep mode
   sleep_enable();
   sleep_mode();
-  
+
   // The program will continue from here after the WDT timeout
 
   // Disable sleep and re-enable the peripherals
@@ -342,9 +377,13 @@ void enterSleep(void)
 // ----------------------------------------------------------------------------
 void setup()
 {
-  // Set the EEPPROM device id at first run
-  //setEEPROMDevId("204");
-  
+  // Set the EEPPROM device id and dose at first run
+#ifdef FIRST_RUN
+  setEEPROMDevId("210");
+  memset(&dose, 0, sizeof(dose));
+  EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
+#endif
+
   pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
 
@@ -358,6 +397,7 @@ void setup()
   DEBUG_PRINTLN("Initializing OpenLog.");
   OpenLog.begin(9600);
   setupOpenLog();
+  loadConfig("SAFECAST.TXT");
 #endif
 
   DEBUG_PRINTLN("Initializing pulse counter.");
@@ -390,6 +430,18 @@ void setup()
 
   DEBUG_PRINT("Devide id = ");
   DEBUG_PRINTLN(dev_id);
+
+#ifdef USE_EEPROM_DOSE
+  EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
+  if (dose.total_time != 0) {
+    dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/cpm_factor) * (dose.total_time/3600.0) ), 0, 2, strbuffer);
+    DEBUG_PRINT("Total dose = ");
+    DEBUG_PRINT(strbuffer);
+    DEBUG_PRINTLN(" uSv");
+  } else {
+    DEBUG_PRINTLN("Total dose = 0.00 uSv");
+  }
+#endif
 
 #ifdef DEBUG_DIAGNOSTIC
   // setup analog reference to read battery and boost voltage
@@ -427,7 +479,7 @@ void loop()
   // Put GPS serial in listen mode
   gpsSerial.listen();
 #endif
-  
+
   // For one second we parse GPS sentences
   for (unsigned long start = millis(); (elapsedTime(start) < GPS_INTERVAL) and !IS_READY;)
   {
@@ -458,7 +510,7 @@ void loop()
   // Will wakeup in 4 seconds from now
   enableSleepTimer();
 #endif
-  
+
   if ((gpsReady) || (gps_status == AVAILABLE)) {
     digitalWrite(ledPin, HIGH);
   } else {
@@ -495,7 +547,14 @@ void loop()
 
       // update the total counter
       total_count += cpb;
-      
+#ifdef USE_EEPROM_DOSE
+      dose.total_count += cpb;
+      dose.total_time += 5;
+      if (dose.total_time % EEPROM_DOSE_WRITETIME == 0) {
+         EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
+      }
+#endif
+
       // set status of Geiger
       if (str_count < NX)
       {
@@ -506,14 +565,18 @@ void loop()
       } else {
         geiger_status = AVAILABLE;
       }
-      
-      // generate timestamp. only update the start time if 
-      // we printed the timestamp. otherwise, the GPS is still 
+
+      // generate timestamp. only update the start time if
+      // we printed the timestamp. otherwise, the GPS is still
       // updating so wait until its finished and generate timestamp
       memset(line, 0, LINE_SZ);
       gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
 
+#ifdef WAIT_GPS_FOR_LOG
       if ((!logfile_ready) && (gps_status == AVAILABLE))
+#else
+      if (!logfile_ready)
+#endif
       {
          if (gps_gen_filename(gps, logfile_name)) {
            logfile_ready = true;
@@ -537,7 +600,7 @@ void loop()
       DEBUG_PRINT("$DIAG,");
       DEBUG_PRINTLN(v0);
 #endif
-      
+
 #ifdef USE_OPENLOG
       if (logfile_ready) {
         // Put OpenLog serial in listen mode
@@ -558,12 +621,12 @@ void loop()
 
     // Clear the flag
     f_wdt = 0;
-    
+
     // Re-enter sleep mode
     enterSleep();
   }
 #endif
-  
+
 }
 
 // ----------------------------------------------------------------------------
@@ -582,10 +645,30 @@ unsigned long elapsedTime(unsigned long startTime) {
 }
 
 #ifdef USE_OPENLOG
+/* wait for openlog prompt */
+bool waitOpenLog(bool commandMode) {
+  int safeguard = 0;
+  bool result = false;
+
+  while(safeguard < OPENLOG_RETRY) {
+    safeguard++;
+    if(OpenLog.available())
+      if(OpenLog.read() == (commandMode ? '>':'<')) break;
+    delay(10);
+  }
+
+  if (safeguard >= OPENLOG_RETRY) {
+    DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
+  } else {
+    DEBUG_PRINTLN(" - ready");
+    result = true;
+  }
+
+  return result;
+}
+
 /* setups up the software serial, resets OpenLog */
 void setupOpenLog() {
-  int safeguard = 0;
-
   pinMode(resetOpenLog, OUTPUT);
   OpenLog.listen();
 
@@ -595,22 +678,118 @@ void setupOpenLog() {
   delay(100);
   digitalWrite(resetOpenLog, HIGH);
 
-  safeguard = 0;
-  while(safeguard < OPENLOG_RETRY) {
-    safeguard++;
-    if(OpenLog.available())
-      if(OpenLog.read() == '>') break;
-    delay(10);
-  }
-
-  if (safeguard >= OPENLOG_RETRY) {
-    DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
-    // Assume "newlog mode" is active
+  if (!waitOpenLog(true)) {
     logfile_ready = true;
   } else {
-    DEBUG_PRINTLN(" - ready");
     openlog_ready = true;
   }
+}
+
+/* load define keys from configuration file */
+void loadConfig(char *fileName) {
+  char *config_buffer, *key, *value;
+  byte pos, line_lenght;
+  byte i, buffer_lenght;
+
+  OpenLog.listen();
+
+  // Send read command to OpenLog
+  DEBUG_PRINT(" - read ");
+  DEBUG_PRINTLN(fileName);
+
+  OpenLog.print("read ");
+  OpenLog.print(fileName);
+  OpenLog.write(13); //This is \r
+
+  while(1) {
+    if(OpenLog.available())
+      if(OpenLog.read() == '\r') break;
+  }
+
+  // Read config file in memory
+  pos = 0;
+  memset(line, 0, LINE_SZ);
+  for(int timeOut = 0 ; timeOut < 1000 ; timeOut++) {
+    if(OpenLog.available()) {
+      line[pos++] = OpenLog.read();
+      timeOut = 0;
+    }
+    delay(1);
+
+    if(pos == LINE_SZ) {
+      break;
+    }
+  }
+
+  line_lenght = pos;
+  pos = 0;
+
+  // Process each config file lines
+  while(pos < line_lenght){
+
+    // Get a complete line
+    i = 0;
+    config_buffer = line + pos;
+    while(line[pos++] != '\n') {
+      i++;
+      if(pos == LINE_SZ) {
+        break;
+      }
+    }
+    buffer_lenght = i++;
+    config_buffer[--i] = '\0';
+
+    // Skip empty lines
+    if(config_buffer[0] == '\0' || config_buffer[0] == '#' || buffer_lenght < 3) continue;
+
+    // Search for keys
+    i = 0;
+    while(config_buffer[i] == ' ' || config_buffer[i] == '\t') {
+      if(++i == buffer_lenght) break; // skip white spaces
+    }
+    if(i == buffer_lenght) continue;
+    key = &config_buffer[i];
+
+    // Search for '=' ignoring white spaces
+    while(config_buffer[i] != '=') {
+      if(config_buffer[i] == ' ' || config_buffer[i] == '\t') config_buffer[i] = '\0';
+      if(++i == buffer_lenght) {
+        break;
+      }
+    }
+    if(i == buffer_lenght) continue;
+    config_buffer[i++] = '\0';
+
+    // Search for value ignoring white spaces
+    while(config_buffer[i] == ' ' || config_buffer[i] == '\t') {
+      if(++i == buffer_lenght) {
+        break;
+      }
+    }
+    if(i == buffer_lenght) continue;
+    value = &config_buffer[i];
+
+    // Process matching keys
+    if(strcmp(key, "cpm_factor") == 0) {
+      // Update cpm factor
+      cpm_factor = atoi(value);
+      DEBUG_PRINTLN("   - Update cpm factor");
+    }
+    else if(strcmp(key, "id") == 0) {
+      // Update devide id in EEPROM
+      int did = atoi(value);
+      sprintf_P(line, PSTR("%03d"),did);
+      setEEPROMDevId(line);
+      DEBUG_PRINTLN("   - Update devide id in EEPROM");
+    }
+    else if(strcmp(key, "dose") == 0) {
+      // Reset total dose in EEPROM
+      memset(&dose, 0, sizeof(dose));
+      EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
+      DEBUG_PRINTLN("   - Reset total dose in EEPROM");
+    }
+  }
+  DEBUG_PRINTLN("   - Done.");
 }
 
 /* create a new file */
@@ -638,18 +817,9 @@ void createFile(char *fileName) {
 
       // wait for OpenLog to indicate file is open and ready for writing
       DEBUG_PRINTLN(" - wait");
-      safeguard = 0;
-      while(safeguard < OPENLOG_RETRY) {
-        safeguard++;
-        if(OpenLog.available())
-          if(OpenLog.read() == '<') break;
-        delay(10);
-      }
-      if (safeguard >= OPENLOG_RETRY) {
+      if (!waitOpenLog(false)) {
         DEBUG_PRINTLN("Append file failed");
         break;
-      } else {
-        DEBUG_PRINTLN(" - ready");
       }
       result = 1;
     } while (0);
@@ -661,25 +831,12 @@ void createFile(char *fileName) {
       delay(100);
       digitalWrite(resetOpenLog, HIGH);
 
-      //Wait for OpenLog to return to waiting for a command
-      safeguard = 0;
-      while(safeguard < OPENLOG_RETRY) {
-        safeguard++;
-        if(OpenLog.available())
-          if(OpenLog.read() == '>') break;
-        delay(10);
-      }
-#ifdef DEBUG
-      if (safeguard >= OPENLOG_RETRY) {
-        DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
-      } else {
-        DEBUG_PRINTLN(" - ready");
-      }
-#endif
+      // Wait for OpenLog to return to waiting for a command
+      waitOpenLog(true);
     }
   } while (0 == result);
 
-  //OpenLog is now waiting for characters and will record them to the new file  
+  //OpenLog is now waiting for characters and will record them to the new file
 }
 #endif
 
@@ -700,11 +857,11 @@ unsigned long cpm_gen()
 {
    unsigned int i;
    unsigned long c_p_m = 0;
-   
+
    // sum up
    for (i=0 ; i < NX ; i++)
      c_p_m += shift_reg[i];
-   
+
    return c_p_m;
 }
 
@@ -718,11 +875,11 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   if (TinyGPS::GPS_INVALID_AGE == age) {
     return false;
   }
-  
+
   // Create the filename for that drive
   strcpy(buf, dev_id);
   strcat(buf, "-");
-  sprintf_P(strbuffer, PSTR("%02d"),month); 
+  sprintf_P(strbuffer, PSTR("%02d"),month);
   strncat(buf, strbuffer, 2);
   sprintf_P(strbuffer, PSTR("%02d"),day);
   strncat(buf, strbuffer, 2);
@@ -770,13 +927,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
   memset(strbuffer, 0, STRBUFFER_SZ);
-  
+
   // get GPS date
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age) {
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
-  
+
   // get GPS position, altitude and speed
   gps.get_position(&x, &y, &age);
 
@@ -784,7 +941,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     gps_status = VOID;
   } else {
     gps_status = AVAILABLE;
-  } 
+  }
   faltitude = gps.f_altitude();
   fspeed = gps.f_speed_kmph();
   nbsat = gps.satellites();
@@ -795,7 +952,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   get_coordinate_string(x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
   get_coordinate_string(y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, strbuffer);
-  
+
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
   sprintf_P(buf, PSTR("$%s,%s,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d"),  \
@@ -825,7 +982,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
      sprintf_P(buf + len, PSTR("*0%X"), (int)chk);
    else
      sprintf_P(buf + len, PSTR("*%X"), (int)chk);
-       
+
 #ifdef USE_SSD1306
 #ifdef USE_SSD1306_DISTANCE
    // compute distance
@@ -833,49 +990,49 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
      int trigger_dist = 25;
      float flat = get_wgs84_coordinate(x);
      float flon = get_wgs84_coordinate(y);
-    
-     if(fspeed > 5) 
+
+     if(fspeed > 5)
        // fpspeed/3.6 * 5s = 6.94 m
        trigger_dist = 5;
-     if(fspeed > 10) 
+     if(fspeed > 10)
        trigger_dist = 10;
-     if(fspeed > 15) 
+     if(fspeed > 15)
        trigger_dist = 20;
-    
-     if(gps_fix_first) 
+
+     if(gps_fix_first)
      {
        gps_last_lat = flat;
        gps_last_lon = flon;
        gps_fix_first = false;
-     } 
-     else 
+     }
+     else
      {
        // Distance in meters
        unsigned long int dist = (long int)TinyGPS::distance_between(flat, flon, gps_last_lat, gps_last_lon);
 
-       if (dist > trigger_dist)   
+       if (dist > trigger_dist)
        {
-         gps_distance += dist;   
+         gps_distance += dist;
          gps_last_lat = flat;
          gps_last_lon = flon;
        }
-     }    
+     }
    }
 #endif
 
    // ready to display the data on screen
    display.clearDisplay();
    int offset = 0;
-   
+
    // Display date
    sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
               day, month, \
               hour, minute, second);
-   display.setCursor(2, offset+24); // textsize*8 
+   display.setCursor(2, offset+24); // textsize*8
    display.setTextSize(1);
    display.setTextColor(WHITE);
    display.println(strbuffer);
- 
+
    // Display CPM
    display.setCursor(2, offset);
    display.setTextSize(2);
@@ -899,12 +1056,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    }
    display.setCursor(122, offset);
    display.println(geiger_status);
- 
+
    // Display uSv/h
-   dtostrf((float)(cpm/CPM_FACTOR), 0, 3, strbuffer);
+   dtostrf((float)(cpm/cpm_factor), 0, 3, strbuffer);
    display.setTextColor(WHITE);
    display.setTextSize(1);
-   display.setCursor(2, offset+16); // textsize*8 
+   display.setCursor(2, offset+16); // textsize*8
    display.print(strbuffer);
    display.println(" uSv/h");
 
@@ -913,27 +1070,27 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
    dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
    display.setTextColor(WHITE);
    display.setTextSize(1);
-   display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8 
+   display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
    display.print(strbuffer);
    display.println("km");
 #endif
-   
+
    // Display altidude
    if (gps.status()) {
 #ifdef USE_SSD1306_CARDINAL
-       sprintf(strbuffer, "%s", gps.f_course() == TinyGPS::GPS_INVALID_F_ANGLE ? "***" : TinyGPS::cardinal(gps.f_course()));
-       display.setTextSize(1);
-       display.setCursor(128-(strlen(strbuffer)*6), offset+8); // textsize*8 
-       display.println(strbuffer);
+     sprintf(strbuffer, "%s", gps.f_course() == TinyGPS::GPS_INVALID_F_ANGLE ? "***" : TinyGPS::cardinal(gps.f_course()));
+     display.setTextSize(1);
+     display.setCursor(128-(strlen(strbuffer)*6), offset+8); // textsize*8
+     display.println(strbuffer);
 #endif
 
-       dtostrf(faltitude, 0, 0, strbuffer);
-       display.setTextSize(1);
-       display.setCursor(122-(strlen(strbuffer)*6), offset+24); // textsize*8 
-       display.print(strbuffer);
-       display.println("m");
+     dtostrf(faltitude, 0, 0, strbuffer);
+     display.setTextSize(1);
+     display.setCursor(122-(strlen(strbuffer)*6), offset+24); // textsize*8
+     display.print(strbuffer);
+     display.println("m");
    }
-      
+
    display.display();
 #endif
 
@@ -944,10 +1101,21 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 void gps_program_settings()
 {
 #ifdef USE_MEDIATEK
-  gpsSerial.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  gpsSerial.println(PMTK_SET_NMEA_UPDATE_1HZ);
-  gpsSerial.println(SBAS_ENABLE);
-  gpsSerial.println(DGPS_WAAS_ON);
+  memset(line, 0, LINE_SZ);
+  sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
+  gpsSerial.println(line);
+
+  memset(line, 0, LINE_SZ);
+  sprintf_P(line, PSTR(PMTK_SET_NMEA_UPDATE_1HZ));
+  gpsSerial.println(line);
+
+  memset(line, 0, LINE_SZ);
+  sprintf_P(line, PSTR(SBAS_ENABLE));
+  gpsSerial.println(line);
+
+  memset(line, 0, LINE_SZ);
+  sprintf_P(line, PSTR(DGPS_WAAS_ON));
+  gpsSerial.println(line);
 #endif
 
 #ifdef USE_SKYTRAQ
@@ -1014,7 +1182,7 @@ void getEEPROMDevId()
     while ((dev_id[i] < '0' || dev_id[i] > '9') && n < N)
     {
       // wait a little before we retry
-      delay(10);        
+      delay(10);
       // reread once and then increment the counter
       dev_id[i] = (char)EEPROM.read(i+BMRDD_EEPROM_ID);
       n++;
@@ -1047,7 +1215,7 @@ float read_voltage(int pin)
 }
 #endif
 
-int availableMemory() 
+int availableMemory()
 {
   int size = 1024;
   byte *buf;
