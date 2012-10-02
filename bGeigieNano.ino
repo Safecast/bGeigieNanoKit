@@ -593,7 +593,7 @@ void loop()
       }
 
       // Printout line
-      DEBUG_PRINTLN(line);
+      Serial.println(line);
 
 #ifdef DEBUG_DIAGNOSTIC
       int v0 = (int)(read_voltage(VOLTAGE_PIN));
