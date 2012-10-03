@@ -157,7 +157,7 @@ unsigned long reg_index = 0;
 unsigned long total_count = 0;
 int str_count = 0;
 char geiger_status = VOID;
-unsigned long cpm_factor = CPM_FACTOR;
+float cpm_factor = CPM_FACTOR;
 
 #ifdef USE_EEPROM_DOSE
 // geiger dose
