@@ -1,3 +1,4 @@
-cpm_factor=334
-id=210
-dose=0
+nm=Lionel
+did=210
+tz=9
+cpmf=334
