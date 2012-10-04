@@ -53,8 +53,10 @@ void NanoSetup::initialize() {
     mConfig.bqm_factor = NANO_BQM2_FACTOR;
     EEPROM_writeAnything(BMRDD_EEPROM_SETUP, mConfig);
 
+#if ENABLE_EEPROM_DOSE
     memset(&mDose, 0, sizeof(mDose));
     EEPROM_writeAnything(BMRDD_EEPROM_DOSE, mDose);
+#endif
   }
 }
 
@@ -203,12 +205,14 @@ void NanoSetup::loadFromFile(char * setupFile) {
         DEBUG_PRINTLN("   - Update timezone in EEPROM");
       }
     }
+#if ENABLE_EEPROM_DOSE
     else if(strcmp(key, "dose") == 0) {
       // Reset total dose in EEPROM
       memset(&mDose, 0, sizeof(mDose));
       EEPROM_writeAnything(BMRDD_EEPROM_DOSE, mDose);
       DEBUG_PRINTLN("   - Reset total dose in EEPROM");
     }
+#endif
   }
   DEBUG_PRINTLN("   - Done.");
 

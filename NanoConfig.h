@@ -26,6 +26,7 @@
 #define WAIT_GPS_FOR_LOG         0
 #define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
+#define ENABLE_EEPROM_DOSE       1
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
