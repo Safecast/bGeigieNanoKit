@@ -348,7 +348,7 @@ void setup()
 
   display.setTextSize(2);
   display.setCursor(40, 8);
-  sprintf_P(strbuffer, PSTR("#%03d"), config.device_id);
+  sprintf_P(strbuffer, PSTR("#%04d"), config.device_id);
   display.print(strbuffer);
 
   display.setTextSize(1);
@@ -688,7 +688,7 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   }
 
   // Create the filename for that drive
-  sprintf_P(strbuffer, PSTR("%03d"),config.device_id);
+  sprintf_P(strbuffer, PSTR("%04d"),config.device_id);
   strcpy(buf, strbuffer);
   strcat(buf, "-");
   sprintf_P(strbuffer, PSTR("%02d"),month);
@@ -766,7 +766,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
-  sprintf_P(buf, PSTR("$%s,%03d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d"),  \
+  sprintf_P(buf, PSTR("$%s,%04d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,%d"),  \
               NANO_HEADER, \
               config.device_id, \
               year, month, day,  \
