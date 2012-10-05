@@ -663,7 +663,6 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   }
 
   // Create the filename for that drive
-
   sprintf_P(strbuffer, PSTR("%03d"),config.device_id);
   strcpy(buf, strbuffer);
   strcat(buf, "-");
@@ -861,7 +860,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.println(strbuffer);
     } else {
       display.setCursor(116, offset);
-      sprintf(strbuffer, "%X", nbsat);
+      sprintf(strbuffer, "^%X", nbsat);
       display.println(strbuffer);
     }
 
