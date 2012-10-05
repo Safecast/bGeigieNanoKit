@@ -205,6 +205,38 @@ void NanoSetup::loadFromFile(char * setupFile) {
         DEBUG_PRINTLN("   - Update timezone in EEPROM");
       }
     }
+    else if(strcmp(key, "st") == 0) {
+      // Update sensor type in EEPROM
+      if (mConfig.sensor_type != atoi(value)) {
+        mConfig.sensor_type = atoi(value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update sensor type in EEPROM");
+      }
+    }
+    else if(strcmp(key, "ss") == 0) {
+      // Update sensor shield in EEPROM
+      if (mConfig.sensor_shield != atoi(value)) {
+        mConfig.sensor_shield = atoi(value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update sensor shield in EEPROM");
+      }
+    }
+    else if(strcmp(key, "sh") == 0) {
+      // Update sensor height in EEPROM
+      if (mConfig.sensor_height != atoi(value)) {
+        mConfig.sensor_height = atoi(value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update sensor height in EEPROM");
+      }
+    }
+    else if(strcmp(key, "sm") == 0) {
+      // Update sensor mode in EEPROM
+      if (mConfig.sensor_mode != atoi(value)) {
+        mConfig.sensor_mode = atoi(value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update sensor mode in EEPROM");
+      }
+    }
 #if ENABLE_EEPROM_DOSE
     else if(strcmp(key, "dose") == 0) {
       // Reset total dose in EEPROM
