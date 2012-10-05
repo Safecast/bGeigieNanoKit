@@ -331,7 +331,32 @@ void setup()
 
 #if ENABLE_SSD1306
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.display(); // show splashscreen
+
+  // show splashscreen logo
+  display.display();
+
+  delay(1000);
+
+  // show 2nd splashscreen
+  display.clearDisplay();
+
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  sprintf_P(strbuffer, PSTR("bGeigie Nano %s"), NANO_VERSION);
+  display.setCursor((128-(strlen(strbuffer)*6))/2, 0);
+  display.print(strbuffer);
+
+  display.setTextSize(2);
+  display.setCursor(40, 8);
+  sprintf_P(strbuffer, PSTR("#%03d"), config.device_id);
+  display.print(strbuffer);
+
+  display.setTextSize(1);
+  if (strlen(config.user_name)) {
+    display.setCursor((128-(strlen(config.user_name)*6))/2, 24); // textsize*8
+    display.print(config.user_name);
+  }
+  display.display();
 #endif
 
   Serial.println(availableMemory());
@@ -475,7 +500,7 @@ void loop()
            DEBUG_PRINT(strbuffer);
 
            // CPM factor
-           sprintf_P(strbuffer, PSTR("# cpm_factor="));
+           sprintf_P(strbuffer, PSTR("nano\n# cpm_factor="));
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
            dtostrf(config.cpm_factor, 0, 1, strbuffer);

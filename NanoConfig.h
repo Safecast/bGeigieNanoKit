@@ -5,11 +5,11 @@
 // bGeigie Nano definitions
 //
 
-#define NANO_DEVICE_ID       210
-#define NANO_VERSION "1.0.0nano"
-#define NANO_HEADER      "BNRDD"
-#define NANO_CPM_FACTOR      334
-#define NANO_BQM2_FACTOR      37
+#define NANO_DEVICE_ID         210
+#define NANO_VERSION       "1.0.2"
+#define NANO_HEADER        "BNRDD"
+#define NANO_CPM_FACTOR        334
+#define NANO_BQM2_FACTOR        37
 
 //
 // Enable or Disable features
