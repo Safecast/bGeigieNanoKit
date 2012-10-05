@@ -76,7 +76,6 @@ unsigned long int gps_distance = 0;
 #define LOGFILE_HEADER "# NEW LOG\n# format="
 char logfile_name[13];  // placeholder for filename
 bool logfile_ready = false;
-char logfile_ext[] = ".log";
 
 // geiger statistics
 unsigned long shift_reg[NX] = {0};
@@ -688,14 +687,7 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
   }
 
   // Create the filename for that drive
-  sprintf_P(strbuffer, PSTR("%04d"),config.device_id);
-  strcpy(buf, strbuffer);
-  strcat(buf, "-");
-  sprintf_P(strbuffer, PSTR("%02d"),month);
-  strncat(buf, strbuffer, 2);
-  sprintf_P(strbuffer, PSTR("%02d"),day);
-  strncat(buf, strbuffer, 2);
-  strcpy(buf+8, logfile_ext);
+  sprintf_P(buf, PSTR("%04d%02d%02d.log"),config.device_id, month, day);
 
   return true;
 }
