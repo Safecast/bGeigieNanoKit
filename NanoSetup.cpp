@@ -72,8 +72,8 @@ void NanoSetup::loadFromFile(char * setupFile) {
   DEBUG_PRINT(" - read ");
   DEBUG_PRINTLN(setupFile);
 
-  mOpenlog.print("read ");
-  mOpenlog.print(setupFile);
+  sprintf_P(mBuffer, PSTR("read 0 %d %s"), mBufferSize, setupFile);
+  mOpenlog.print(mBuffer);
   mOpenlog.write(13); //This is \r
 
   while(1) {
