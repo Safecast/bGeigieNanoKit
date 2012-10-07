@@ -72,7 +72,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
   DEBUG_PRINT(" - read ");
   DEBUG_PRINTLN(setupFile);
 
-  sprintf_P(mBuffer, PSTR("read 0 %d %s"), mBufferSize, setupFile);
+  sprintf_P(mBuffer, PSTR("read %s 0 %d"), setupFile, mBufferSize);
   mOpenlog.print(mBuffer);
   mOpenlog.write(13); //This is \r
 
@@ -98,7 +98,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
 
   line_lenght = pos;
   pos = 0;
-
+  
   // Process each config file lines
   while(pos < line_lenght){
 
@@ -143,7 +143,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
     }
     if(i == buffer_lenght) continue;
     value = &config_buffer[i];
-
+    
     //
     // Process matching keys
     //
@@ -183,8 +183,8 @@ void NanoSetup::loadFromFile(char * setupFile) {
     }
     else if(strcmp(key, "gt") == 0) {
       // Update geiger type in EEPROM
-      if (mConfig.mode != atoi(value)) {
-        mConfig.mode = atoi(value);
+      if (mConfig.type != atoi(value)) {
+        mConfig.type = atoi(value);
         config_changed = true;
         DEBUG_PRINTLN("   - Update geiger type in EEPROM");
       }

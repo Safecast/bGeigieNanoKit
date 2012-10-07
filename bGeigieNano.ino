@@ -891,7 +891,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       sprintf_P(strbuffer, PSTR(" uSv/h"));
       display.println(strbuffer);
     } 
-    else if (config.mode == 0) {
+    else if (config.mode == 1) {
       dtostrf((float)(cpm*config.bqm_factor), 0, 3, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" Bq/m2"));
