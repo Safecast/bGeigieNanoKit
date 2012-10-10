@@ -499,7 +499,7 @@ void loop()
            DEBUG_PRINT(strbuffer);
 
            // CPM factor
-           sprintf_P(strbuffer, PSTR("nano\n# cpm_factor="));
+           sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n# cpm_factor="));
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
            dtostrf(config.cpm_factor, 0, 1, strbuffer);
@@ -672,6 +672,9 @@ unsigned long cpm_gen()
    for (i=0 ; i < NX ; i++)
      c_p_m += shift_reg[i];
 
+   // deadtime compensation (medcom international)
+   c_p_m = (unsigned long)((float)c_p_m/(1-(((float)c_p_m*1.8833e-6))));
+
    return c_p_m;
 }
 
@@ -829,36 +832,33 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // **********************************************************************
     // bGeigie mode
     // **********************************************************************
-    // Display date
-    sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
-        day, month, \
-        hour, minute, second);
-    display.setCursor(2, offset+24); // textsize*8
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.println(strbuffer);
-
     // Display uptime
     hour = uptime/3600;
     minute = uptime/60 - hour*60;
     sprintf_P(strbuffer, PSTR("%02dh%02dm"), hour, minute);
-    display.setCursor(92, offset+24);
+    display.setCursor(92, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.println(strbuffer);
 
     // Display CPM (with deadtime compensation)
-    display.setCursor(2, offset);
+    display.setCursor(0, offset);
     display.setTextSize(2);
     if (VOID == geiger_status) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
     } else {
       display.setTextColor(WHITE);
     }
-    sprintf_P(strbuffer, PSTR("CPM "));
+    if (cpm > 1000) {
+      dtostrf((float)(cpm/1000), 0, 1, strbuffer);
+      display.print(strbuffer);
+      display.print("k");
+    } else {
+      dtostrf((float)cpm, 0, 0, strbuffer);
+      display.print(strbuffer);
+    }
+    sprintf_P(strbuffer, PSTR(" CPM"));
     display.print(strbuffer);
-    dtostrf(((float)cpm/(1-(((float)cpm*1.8833e-6)))), 0, 0, strbuffer);
-    display.println(strbuffer);
 
     // Display SD, GPS and Geiger states
     if (openlog_ready) {
@@ -884,7 +884,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // Display uSv/h
     display.setTextColor(WHITE);
     display.setTextSize(1);
-    display.setCursor(2, offset+16); // textsize*8
+    display.setCursor(0, offset+16); // textsize*8
     if (config.mode == 0) {
       dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
       display.print(strbuffer);
@@ -903,7 +903,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
       display.setTextColor(WHITE);
       display.setTextSize(1);
-      display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
+      display.setCursor(116-(strlen(strbuffer)*6), offset+8); // textsize*8
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("km"));
       display.println(strbuffer);
@@ -915,7 +915,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         sprintf_P(strbuffer, PSTR("--"));
       }
       display.setTextSize(1);
-      display.setCursor(122-(strlen(strbuffer)*6), offset+16); // textsize*8
+      display.setCursor(122-(strlen(strbuffer)*6), offset+8); // textsize*8
       display.print(strbuffer);
       display.println("m");
     }
@@ -925,79 +925,81 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // xGeigie mode
     // **********************************************************************
 
-    // Display CPM
-    display.setCursor(0, offset);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    if (geiger_status == 'V') {
-      sprintf_P(strbuffer, PSTR("CPM ---"));
-      display.print(strbuffer);
-    } else if (cpm > 1000) {
-      sprintf_P(strbuffer, PSTR("CPM "));
-      display.print(strbuffer);
-      dtostrf((float)(cpm/1000), 0, 1, strbuffer);
-      display.print(strbuffer);
-      display.println("K");
-    } else {
-      sprintf_P(strbuffer, PSTR("CPM "));
-      display.print(strbuffer);
-      display.println(cpm);
-    }
-
     // Display uSv/h
     display.setTextColor(WHITE);
-    display.setTextSize(1);
-    display.setCursor(0, offset+8); // textsize*8
-    sprintf_P(strbuffer, PSTR("Dr="));
-    display.print(strbuffer);
+    display.setTextSize(2);
+    display.setCursor(0, offset); // textsize*8
     dtostrf((float)(cpm/config.cpm_factor), 0, 2, strbuffer);
     display.print(strbuffer);
     sprintf_P(strbuffer, PSTR(" uS/h"));
     display.print(strbuffer);
 
-    // Total dose and max count
-    display.setTextColor(WHITE);
-    display.setTextSize(1);
-    display.setCursor(0, offset+16); // textsize*8
-    sprintf_P(strbuffer, PSTR("Mx="));
-    display.print(strbuffer);
-    dtostrf((float)(max_count/config.cpm_factor), 0, 2, strbuffer);
-    display.print(strbuffer);
-    sprintf_P(strbuffer, PSTR(" uS/h"));
-    display.print(strbuffer);
-
-    display.setTextColor(WHITE);
-    display.setTextSize(1);
-    display.setCursor(0, offset+24); // textsize*8
-    sprintf_P(strbuffer, PSTR("Ds="));
-    display.print(strbuffer);
-    dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 2, strbuffer);
-    display.print(strbuffer);
-    sprintf_P(strbuffer, PSTR(" uS"));
-    display.print(strbuffer);
-
-    // Display battery indicator  
-    int battery = (read_voltage(VOLTAGE_PIN)*8/4.3);
-    if (battery > 8) battery = 8;
-    display.drawRect(116, offset+24, 12, 7, WHITE);
-    display.fillRect(118, offset+26, battery, 3, WHITE);
-
-    // Display date
-    sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d"), \
-        day, month, \
-        hour, minute);
-    display.setCursor(60, offset); // textsize*8
+    display.setCursor(0, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.println(strbuffer);
+    if (toggle) {
+      // Display CPM
+      if (geiger_status == 'V') {
+        sprintf_P(strbuffer, PSTR("--- "));
+        display.print(strbuffer);
+      } else if (cpm > 1000) {
+        dtostrf((float)(cpm/1000), 0, 1, strbuffer);
+        display.print(strbuffer);
+        display.print("k");
+      } else {
+        display.print(cpm);
+        display.print(" ");
+      }
+      sprintf_P(strbuffer, PSTR("CPM "));
+      display.print(strbuffer);
+
+      // Display bq/m2
+      dtostrf((float)(cpm*config.bqm_factor), 0, 3, strbuffer);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR(" Bq/m2"));
+      display.print(strbuffer);
+    } else {
+      // Total dose and max count
+      sprintf_P(strbuffer, PSTR("Mx="));
+      display.print(strbuffer);
+      dtostrf((float)(max_count/config.cpm_factor), 0, 2, strbuffer);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR("uS/h "));
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR("Ds="));
+      display.print(strbuffer);
+      dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 2, strbuffer);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR("uS"));
+      display.print(strbuffer);
+    }
   } else {
     // Wrong mode
-    display.setCursor(2, offset);
+    display.setCursor(0, offset);
     display.setTextSize(2);
     display.setTextColor(BLACK, WHITE); // 'inverted' text
     sprintf_P(strbuffer, PSTR("Wrong mode !"));
     display.print(strbuffer);
   }
+
+  // **********************************************************************
+  // Common display parts
+  // **********************************************************************
+
+  // Display date
+  sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
+        day, month, \
+        hour, minute, second);
+  display.setCursor(0, offset+24); // textsize*8
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.println(strbuffer);
+
+  // Display battery indicator
+  int battery = (read_voltage(VOLTAGE_PIN)*8/4.3);
+  if (battery > 8) battery = 8;
+  display.drawRect(116, offset+24, 12, 7, WHITE);
+  display.fillRect(118, offset+26, battery, 3, WHITE);
 
   display.display();
 #endif
