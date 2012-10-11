@@ -48,9 +48,12 @@ void NanoSetup::initialize() {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.marker = BMRDD_EEPROM_MARKER;
     mConfig.device_id = NANO_DEVICE_ID;
-    mConfig.cpm_window = 12;
+    mConfig.timezone = 9;
+    sprintf_P(mConfig.country_code, PSTR("JPN"));
+    mConfig.cpm_window = 60;
     mConfig.cpm_factor = NANO_CPM_FACTOR;
     mConfig.bqm_factor = NANO_BQM2_FACTOR;
+    mConfig.sensor_height = 100;
     EEPROM_writeAnything(BMRDD_EEPROM_SETUP, mConfig);
 
 #if ENABLE_EEPROM_DOSE
