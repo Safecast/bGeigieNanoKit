@@ -57,6 +57,23 @@ typedef enum {
  GEIGIE_MODE_BQM2
 } GeigieMode;
 
+typedef enum {
+ SENSOR_TYPE_LND7317 = 0,
+ SENSOR_TYPE_LND712,
+} SensorType;
+
+typedef enum {
+ SENSOR_SHIELD_NONE = 0,
+ SENSOR_SHIELD_ALPHA,
+ SENSOR_SHIELD_ALPHABETA,
+} SensorShield;
+
+typedef enum {
+ SENSOR_MODE_AIR = 0,
+ SENSOR_MODE_SURFACE = 1,
+ SENSOR_MODE_PLANE = 2
+} SensorMode;
+
 typedef struct {
   unsigned long total_count;
   unsigned long total_time;
