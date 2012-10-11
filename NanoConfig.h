@@ -27,6 +27,7 @@
 #define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
+#define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
@@ -82,11 +83,15 @@
 // 0 = D2, 1 = D3
 #define INTERRUPT_COUNTER_PIN 0
 
+// bGeigie <-> xGeigie switch pin
+#define GEIGIE_TYPE_PIN A0
+#define GEIGIE_TYPE_THRESHOLD 500
+
 // Voltage divider
 // GND -- R2 --A7 -- R1 -- VCC
 // https://en.wikipedia.org/wiki/Voltage_divider
 #define VOLTAGE_PIN A7
-#define VOLTAGE_R1 9000
+#define VOLTAGE_R1 9100
 #define VOLTAGE_R2 1000
 
 #endif

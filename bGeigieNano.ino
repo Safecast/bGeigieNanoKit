@@ -260,6 +260,8 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 void setup()
 {
   pinMode(GPS_LED_PIN, OUTPUT);
+  pinMode(GEIGIE_TYPE_PIN, INPUT);
+
   Serial.begin(9600);
 
 #ifndef ENABLE_SLEEPMODE
@@ -319,10 +321,8 @@ void setup()
   }
 #endif
 
-#if ENABLE_DIAGNOSTIC
   // setup analog reference to read battery and boost voltage
   analogReference(INTERNAL);
-#endif
 
 #if ENABLE_SLEEPMODE
   enableSleepTimer();
@@ -369,6 +369,15 @@ void setup()
 void loop()
 {
   bool gpsReady = false;
+
+#ifdef ENABLE_GEIGIE_SWITCH
+  // Check geigie mode switch
+  if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
+    config.type = 1; // xGeigie
+  } else {
+    config.type = 0; // bGeigie
+  }
+#endif
 
 #if ENABLE_SLEEPMODE
   if(f_wdt == 1)
@@ -996,7 +1005,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.println(strbuffer);
 
   // Display battery indicator
-  int battery = (read_voltage(VOLTAGE_PIN)*8/4.3);
+  // Range = [3.5v to 4.3v]
+  int battery = ((read_voltage(VOLTAGE_PIN)-3.5)*8/0.8);
+  if (battery < 0) battery = 0;
   if (battery > 8) battery = 8;
   display.drawRect(116, offset+24, 12, 7, WHITE);
   display.fillRect(118, offset+26, battery, 3, WHITE);
@@ -1080,7 +1091,8 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
 float read_voltage(int pin)
 {
   static float voltage_divider = (float)VOLTAGE_R2 / (VOLTAGE_R1 + VOLTAGE_R2);
-  return 0.9*analogRead(pin)*(3300/1024)*4;
+  float result = (float)analogRead(pin)/1024 * 3.3 / voltage_divider;
+  return result;
 }
 
 /* get available memory */
