@@ -27,6 +27,7 @@
 #define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
+#define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 

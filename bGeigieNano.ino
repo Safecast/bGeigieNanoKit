@@ -508,7 +508,11 @@ void loop()
            DEBUG_PRINT(strbuffer);
 
            // CPM factor
+#ifdef ENABLE_LND_DEADTIME
            sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n# cpm_factor="));
+#else
+           sprintf_P(strbuffer, PSTR("nano\n# cpm_factor="));
+#endif
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
            dtostrf(config.cpm_factor, 0, 1, strbuffer);
@@ -681,8 +685,10 @@ unsigned long cpm_gen()
    for (i=0 ; i < NX ; i++)
      c_p_m += shift_reg[i];
 
+#ifdef ENABLE_LND_DEADTIME
    // deadtime compensation (medcom international)
    c_p_m = (unsigned long)((float)c_p_m/(1-(((float)c_p_m*1.8833e-6))));
+#endif
 
    return c_p_m;
 }
