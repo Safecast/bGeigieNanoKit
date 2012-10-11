@@ -114,7 +114,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
         break;
       }
     }
-    buffer_lenght = i++;
+    buffer_lenght = i;
     config_buffer[--i] = '\0';
 
     // Skip empty lines
@@ -198,6 +198,15 @@ void NanoSetup::loadFromFile(char * setupFile) {
         mConfig.mode = atoi(value);
         config_changed = true;
         DEBUG_PRINTLN("   - Update geiger mode in EEPROM");
+      }
+    }
+    else if(strcmp(key, "cn") == 0) {
+      // Update country code in EEPROM
+      value[3] = '\0'; // force 3 characters code
+      if (strcmp(mConfig.country_code, value) != 0 ) {
+        strcpy(mConfig.country_code, value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update country code in EEPROM");
       }
     }
     else if(strcmp(key, "tz") == 0) {
