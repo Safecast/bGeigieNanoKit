@@ -47,6 +47,16 @@
 // write every hours (eeprom ~ 100000 cycles -> ~ 11 years)
 #define BMRDD_EEPROM_DOSE_WRITETIME 3600
 
+typedef enum {
+ GEIGIE_TYPE_B = 0,
+ GEIGIE_TYPE_X
+} GeigieType;
+
+typedef enum {
+ GEIGIE_MODE_USVH = 0,
+ GEIGIE_MODE_BQM2
+} GeigieMode;
+
 typedef struct {
   unsigned long total_count;
   unsigned long total_time;

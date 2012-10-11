@@ -373,9 +373,9 @@ void loop()
 #ifdef ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
-    config.type = 1; // xGeigie
+    config.type = GEIGIE_TYPE_X; // xGeigie
   } else {
-    config.type = 0; // bGeigie
+    config.type = GEIGIE_TYPE_B; // bGeigie
   }
 #endif
 
@@ -528,7 +528,7 @@ void loop()
 #endif
 
 #if ENABLE_OPENLOG
-      if (logfile_ready) {
+      if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
         // Put OpenLog serial in listen mode
         OpenLog.listen();
         OpenLog.println(line);
@@ -837,7 +837,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.clearDisplay();
   int offset = 0;
 
-  if (config.type == 0) {
+  if (config.type == GEIGIE_TYPE_B) {
     // **********************************************************************
     // bGeigie mode
     // **********************************************************************
@@ -894,13 +894,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextColor(WHITE);
     display.setTextSize(1);
     display.setCursor(0, offset+16); // textsize*8
-    if (config.mode == 0) {
+    if (config.mode == GEIGIE_MODE_USVH) {
       dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
       display.println(strbuffer);
     } 
-    else if (config.mode == 1) {
+    else if (config.mode == GEIGIE_MODE_BQM2) {
       dtostrf((float)(cpm*config.bqm_factor), 0, 3, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" Bq/m2"));
@@ -929,7 +929,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.println("m");
     }
   } 
-  else if (config.type == 1) {
+  else if (config.type == GEIGIE_TYPE_X) {
     // **********************************************************************
     // xGeigie mode
     // **********************************************************************
