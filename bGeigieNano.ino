@@ -375,7 +375,7 @@ void loop()
 {
   bool gpsReady = false;
 
-#ifdef ENABLE_GEIGIE_SWITCH
+#if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
     config.type = GEIGIE_TYPE_X; // xGeigie
@@ -525,7 +525,7 @@ void loop()
                config.sensor_height,
                config.sensor_mode);
            OpenLog.print(line);
-           DEBUG_PRINT(line);
+           Serial.print(line);
 #endif
          }
       }
@@ -539,12 +539,6 @@ void loop()
       // Printout line
       Serial.println(line);
 
-#if ENABLE_DIAGNOSTIC
-      int v0 = (int)(read_voltage(VOLTAGE_PIN));
-      DEBUG_PRINT("$DIAG,");
-      DEBUG_PRINTLN(v0);
-#endif
-
 #if ENABLE_OPENLOG
       if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
         // Put OpenLog serial in listen mode
@@ -552,8 +546,9 @@ void loop()
         OpenLog.println(line);
 
 #if ENABLE_DIAGNOSTIC
+        dtostrf(read_voltage(VOLTAGE_PIN), 0, 1, strbuffer);
         OpenLog.print("$DIAG,");
-        OpenLog.println(v0);
+        OpenLog.println(strbuffer);
 #endif
       }
 #endif
@@ -980,7 +975,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.print(strbuffer);
 
       // Display bq/m2
-      dtostrf((float)(cpm*config.bqm_factor), 0, 2, strbuffer);
+      dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" Bq/m2"));
       display.print(strbuffer);

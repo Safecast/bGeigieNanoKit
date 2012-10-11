@@ -114,7 +114,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
         break;
       }
     }
-    buffer_lenght = i;
+    buffer_lenght = i++;
     config_buffer[--i] = '\0';
 
     // Skip empty lines
