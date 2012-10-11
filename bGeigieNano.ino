@@ -912,7 +912,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
     // Display uSv/h
     display.setTextColor(WHITE);
-    display.setTextSize(1);
     display.setCursor(0, offset+16); // textsize*8
     if (config.mode == GEIGIE_MODE_USVH) {
       dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
@@ -930,8 +929,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (toggle) {
       // Display distance
       dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
-      display.setTextColor(WHITE);
-      display.setTextSize(1);
       display.setCursor(116-(strlen(strbuffer)*6), offset+8); // textsize*8
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("km"));
@@ -943,7 +940,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       } else {
         sprintf_P(strbuffer, PSTR("--"));
       }
-      display.setTextSize(1);
       display.setCursor(122-(strlen(strbuffer)*6), offset+8); // textsize*8
       display.print(strbuffer);
       display.println("m");

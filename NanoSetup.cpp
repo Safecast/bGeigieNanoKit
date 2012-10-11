@@ -200,6 +200,14 @@ void NanoSetup::loadFromFile(char * setupFile) {
         DEBUG_PRINTLN("   - Update geiger mode in EEPROM");
       }
     }
+    else if(strcmp(key, "al") == 0) {
+      // Update alarm threshold in EEPROM
+      if (mConfig.alarm_level != atoi(value)) {
+        mConfig.alarm_level = atoi(value);
+        config_changed = true;
+        DEBUG_PRINTLN("   - Update alarm threshold in EEPROM");
+      }
+    }
     else if(strcmp(key, "cn") == 0) {
       // Update country code in EEPROM
       value[3] = '\0'; // force 3 characters code
