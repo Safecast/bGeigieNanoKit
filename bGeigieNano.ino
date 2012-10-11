@@ -341,8 +341,13 @@ void setup()
 
   display.setTextColor(WHITE);
   display.setTextSize(1);
-  sprintf_P(strbuffer, PSTR("bGeigie Nano %s"), NANO_VERSION);
-  display.setCursor((128-(strlen(strbuffer)*6))/2, 0);
+  sprintf_P(strbuffer, PSTR("Geigie Nano %s"), NANO_VERSION);
+  display.setCursor((128-((strlen(strbuffer)+1)*6))/2, 0);
+  if (config.type == GEIGIE_TYPE_B) {
+    display.print("b");
+  } else {
+    display.print("x");
+  }
   display.print(strbuffer);
 
   display.setTextSize(2);
@@ -481,12 +486,6 @@ void loop()
         geiger_status = AVAILABLE;
       }
 
-      // generate timestamp. only update the start time if
-      // we printed the timestamp. otherwise, the GPS is still
-      // updating so wait until its finished and generate timestamp
-      memset(line, 0, LINE_SZ);
-      gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
-
 #if WAIT_GPS_FOR_LOG
       if ((!logfile_ready) && (gps_status == AVAILABLE))
 #else
@@ -507,20 +506,35 @@ void loop()
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
 
-           // CPM factor
 #ifdef ENABLE_LND_DEADTIME
-           sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n# cpm_factor="));
+           sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n"));
 #else
-           sprintf_P(strbuffer, PSTR("nano\n# cpm_factor="));
+           sprintf_P(strbuffer, PSTR("nano\n));
 #endif
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
-           dtostrf(config.cpm_factor, 0, 1, strbuffer);
-           OpenLog.println(strbuffer);
-           DEBUG_PRINTLN(strbuffer);
+
+           // Settings dump
+           sprintf_P(line, PSTR("# nm=%s,tz=%d,cn=%s,cpmf=%d,st=%d,ss=%d,sh=%d,sm=%d\n"),
+               config.user_name,
+               config.timezone,
+               config.country_code,
+               (int)config.cpm_factor,
+               config.sensor_type,
+               config.sensor_shield,
+               config.sensor_height,
+               config.sensor_mode);
+           OpenLog.print(line);
+           DEBUG_PRINT(line);
 #endif
          }
       }
+
+      // generate timestamp. only update the start time if
+      // we printed the timestamp. otherwise, the GPS is still
+      // updating so wait until its finished and generate timestamp
+      memset(line, 0, LINE_SZ);
+      gps_gen_timestamp(gps, line, shift_reg[reg_index], cpm, cpb);
 
       // Printout line
       Serial.println(line);
@@ -941,7 +955,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // **********************************************************************
 
     // Display uSv/h
-    display.setTextColor(WHITE);
+    if (VOID == geiger_status) {
+      display.setTextColor(BLACK, WHITE); // 'inverted' text
+    } else {
+      display.setTextColor(WHITE);
+    }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
     dtostrf((float)(cpm/config.cpm_factor), 0, 2, strbuffer);
@@ -954,10 +972,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextColor(WHITE);
     if (toggle) {
       // Display CPM
-      if (geiger_status == 'V') {
-        sprintf_P(strbuffer, PSTR("--- "));
-        display.print(strbuffer);
-      } else if (cpm > 1000) {
+      if (cpm > 1000) {
         dtostrf((float)(cpm/1000), 0, 1, strbuffer);
         display.print(strbuffer);
         display.print("k");
@@ -969,7 +984,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.print(strbuffer);
 
       // Display bq/m2
-      dtostrf((float)(cpm*config.bqm_factor), 0, 3, strbuffer);
+      dtostrf((float)(cpm*config.bqm_factor), 0, 2, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" Bq/m2"));
       display.print(strbuffer);
@@ -977,13 +992,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       // Total dose and max count
       sprintf_P(strbuffer, PSTR("Mx="));
       display.print(strbuffer);
-      dtostrf((float)(max_count/config.cpm_factor), 0, 2, strbuffer);
+      dtostrf((float)(max_count/config.cpm_factor), 0, 1, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("uS/h "));
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("Ds="));
       display.print(strbuffer);
-      dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 2, strbuffer);
+      dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 0, strbuffer);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("uS"));
       display.print(strbuffer);
