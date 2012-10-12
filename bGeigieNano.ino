@@ -173,6 +173,9 @@ static void gps_program_settings();
 static float read_voltage(int pin);
 static int availableMemory();
 static unsigned long elapsedTime(unsigned long startTime);
+#if ENABLE_100M_TRUNCATION
+static void truncate_100m(char *latitude, char *longitude);
+#endif
 
 // Sleep mode -----------------------------------------------------------------
 #if ENABLE_SLEEPMODE
@@ -414,7 +417,9 @@ void loop()
       char c = Serial.read();
 #endif
 
-      //Serial.print(c); // uncomment this line if you want to see the GPS data flowing
+#if ENABLE_GPS_NMEA_LOG
+      Serial.print(c); // uncomment this line if you want to see the GPS data flowing
+#endif
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
     }
@@ -486,7 +491,7 @@ void loop()
         geiger_status = AVAILABLE;
       }
 
-#if WAIT_GPS_FOR_LOG
+#if ENABLE_WAIT_GPS_FOR_LOG
       if ((!logfile_ready) && (gps_status == AVAILABLE))
 #else
       if (!logfile_ready)
@@ -720,14 +725,18 @@ bool gps_gen_filename(TinyGPS &gps, char *buf) {
 }
 
 /* convert long integer from TinyGPS to string "xxxxx.xxxx" */
-void get_coordinate_string(unsigned long val, char *buf)
+void get_coordinate_string(bool is_latitude, unsigned long val, char *buf)
 {
   unsigned long left = 0;
   unsigned long right = 0;
 
   left = val/100000.0;
   right = (val - left*100000)/10;
-  sprintf_P(buf, PSTR("%ld.%04ld"), left, right);
+  if (is_latitude) {
+    sprintf_P(buf, PSTR("%04ld.%04ld"), left, right);
+  } else {
+    sprintf_P(buf, PSTR("%05ld.%04ld"), left, right);
+  }
 }
 
 /* convert long integer from TinyGPS to float WGS84 degrees */
@@ -766,7 +775,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // get GPS position, altitude and speed
   gps.get_position(&x, &y, &age);
-
   if (!gps.status()) {
     gps_status = VOID;
   } else {
@@ -779,9 +787,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   if (x < 0) { NS = 'S'; x = -x;}
   if (y < 0) { WE = 'W'; y = -y;}
-  get_coordinate_string(x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
-  get_coordinate_string(y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
+  get_coordinate_string(true, x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
+  get_coordinate_string(false, y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, strbuffer);
+
+#if ENABLE_100M_TRUNCATION
+  truncate_100m(lat, lon);
+#endif
 
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
@@ -1116,3 +1128,63 @@ int availableMemory()
   free(buf);
   return size;
 }
+
+#if ENABLE_100M_TRUNCATION
+/*
+* Truncate the latitude and longitude according to
+* Japan Post requirements
+*
+* This algorithm truncate the minute
+* part of the latitude and longitude
+* in order to rasterize the points on
+* a 100x100m grid.
+*/
+void truncate_100m(char *latitude, char *longitude)
+{
+  unsigned long minutes;
+  float latitude0;
+  unsigned int longitude_trunc;
+
+  /* latitude */
+  // get minutes in one long int
+  minutes = (unsigned long)(latitude[2]-'0')*100000
+    + (unsigned long)(latitude[3]-'0')*10000
+    + (unsigned long)(latitude[5]-'0')*1000
+    + (unsigned long)(latitude[6]-'0')*100
+    + (unsigned long)(latitude[7]-'0')*10
+    + (unsigned long)(latitude[8]-'0');
+  // truncate, for latutude, truncation factor is fixed
+  minutes -= minutes % 546;
+  // get this back in the string
+  latitude[2] = '0' + (minutes/100000);
+  latitude[3] = '0' + ((minutes%100000)/10000);
+  latitude[5] = '0' + ((minutes%10000)/1000);
+  latitude[6] = '0' + ((minutes%1000)/100);
+  latitude[7] = '0' + ((minutes%100)/10);
+  latitude[8] = '0' + (minutes%10);
+
+  // compute the full latitude in radian
+  latitude0 = ((float)(latitude[0]-'0')*10 + (latitude[1]-'0') + (float)minutes/600000.f)/180.*M_PI;
+
+  /* longitude */
+  // get minutes in one long int
+  minutes = (unsigned long)(longitude[3]-'0')*100000
+    + (unsigned long)(longitude[4]-'0')*10000
+    + (unsigned long)(longitude[6]-'0')*1000
+    + (unsigned long)(longitude[7]-'0')*100
+    + (unsigned long)(longitude[8]-'0')*10
+    + (unsigned long)(longitude[9]-'0');
+  // compute truncation factor
+  longitude_trunc = (unsigned int)((0.0545674090600784/cos(latitude0))*10000.);
+  // truncate
+  minutes -= minutes % longitude_trunc;
+  // get this back in the string
+  longitude[3] = '0' + (minutes/100000);
+  longitude[4] = '0' + ((minutes%100000)/10000);
+  longitude[6] = '0' + ((minutes%10000)/1000);
+  longitude[7] = '0' + ((minutes%1000)/100);
+  longitude[8] = '0' + ((minutes%100)/10);
+  longitude[9] = '0' + (minutes%10);
+
+}
+#endif /* JAPAN_POST */

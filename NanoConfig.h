@@ -18,17 +18,18 @@
 #define ENABLE_DEBUG             1
 #define ENABLE_DIAGNOSTIC        0
 #define ENABLE_SSD1306           1
-#define ENABLE_SSD1306_DISTANCE  1
 #define ENABLE_SOFTGPS           1
 #define ENABLE_STATIC_GPS        0
 #define ENABLE_HARDWARE_COUNTER  0
 #define ENABLE_OPENLOG           1
-#define WAIT_GPS_FOR_LOG         0
+#define ENABLE_WAIT_GPS_FOR_LOG  0
+#define ENABLE_GPS_NMEA_LOG      0
+#define ENABLE_100M_TRUNCATION   0
 #define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
-#define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
+#define ENABLE_GEIGIE_SWITCH     0 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
