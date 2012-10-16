@@ -57,6 +57,7 @@ the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 3
     export ARDUINODIR=/home/geigie/arduino-1.0.1/
     export SERIALDEV=/dev/ttyUSB0
     export BOARD=fio
+    cp -r libraries /home/geigie/arduino-1.0.1/
     make
     make upload
 
