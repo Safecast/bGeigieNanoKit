@@ -31,6 +31,7 @@
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
 #define ENABLE_GEIGIE_SWITCH     0 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
+#define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output
@@ -41,6 +42,20 @@
 //
 
 #if ENABLE_NANOKIT_PIN
+#if ENABLE_NANOPCBKIT_PIN
+  #warning NANO PCB KIT with OLED screen used !
+  #define OLED_SPI_MODE // SPI mode enabled
+  #define OLED_CLK 10
+  #define OLED_DATA 9
+  #define OLED_DC 11
+  #define OLED_CS 12
+  #define OLED_RESET 13
+  #define GPS_RX_PIN 8
+  #define GPS_TX_PIN 7
+  #define OPENLOG_RX_PIN 6
+  #define OPENLOG_TX_PIN 5
+  #define OPENLOG_RST_PIN 4
+#else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
   #define OLED_CLK 7
@@ -53,6 +68,7 @@
   #define OPENLOG_RX_PIN 10
   #define OPENLOG_TX_PIN 11
   #define OPENLOG_RST_PIN 12
+#endif  // ENABLE_NANOPCBKIT_PIN
 #else
 #if ENABLE_HARDWARE_COUNTER
   // Pin assignment for version 1.0.1
