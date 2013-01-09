@@ -72,6 +72,7 @@ unsigned long int gps_distance = 0;
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
 
+
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
 char logfile_name[13];  // placeholder for filename
@@ -381,9 +382,9 @@ void loop()
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
-    config.type = GEIGIE_TYPE_X; // xGeigie
+    config.type = GEIGIE_TYPE_B; // xGeigie
   } else {
-    config.type = GEIGIE_TYPE_B; // bGeigie
+    config.type = GEIGIE_TYPE_X; // bGeigie
   }
 #endif
 
@@ -912,9 +913,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       sprintf_P(strbuffer, PSTR("No GPS"));
       display.println(strbuffer);
     } else {
-      display.setCursor(116, offset);
-      sprintf(strbuffer, "^%X", nbsat);
+      display.setCursor(110, offset); 
+      sprintf(strbuffer,"%2d", nbsat);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR("^"));
       display.println(strbuffer);
+  
     }
 
     // Display uSv/h
@@ -1030,12 +1034,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // Display battery indicator
   // Range = [3.5v to 4.3v]
-  int battery = ((read_voltage(VOLTAGE_PIN)-3.5)*8/0.8);
+  //int battery = ((read_voltage(VOLTAGE_PIN)-3.5)*8/0.8);
+  int battery =((read_voltage(VOLTAGE_PIN)-30));
   if (battery < 0) battery = 0;
   if (battery > 8) battery = 8;
-  display.drawRect(116, offset+24, 12, 7, WHITE);
-  display.fillRect(118, offset+26, battery, 3, WHITE);
 
+display.drawRect(116, offset+24, 12, 7, WHITE);
+display.fillRect(118, offset+26, battery, 3, WHITE);
+  
   display.display();
 #endif
 
@@ -1115,7 +1121,7 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
 float read_voltage(int pin)
 {
   static float voltage_divider = (float)VOLTAGE_R2 / (VOLTAGE_R1 + VOLTAGE_R2);
-  float result = (float)analogRead(pin)/1024 * 3.3 / voltage_divider;
+  float result = (float)analogRead(pin)/1024 *10 / voltage_divider;
   return result;
 }
 
