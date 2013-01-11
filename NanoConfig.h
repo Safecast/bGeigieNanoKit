@@ -91,7 +91,7 @@
 #endif
 #endif
 
-#define GPS_LED_PIN 13
+//#define GPS_LED_PIN 13
 
 // HardwareCounter pin
 // the timer1 pin on the 328p is D5
@@ -102,13 +102,13 @@
 #define INTERRUPT_COUNTER_PIN 0
 
 // bGeigie <-> xGeigie switch pin
-#define GEIGIE_TYPE_PIN A0
+#define GEIGIE_TYPE_PIN A5
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider
-// GND -- R2 --A7 -- R1 -- VCC
+// GND -- R2 --A0 -- R1 -- VCC
 // https://en.wikipedia.org/wiki/Voltage_divider
-#define VOLTAGE_PIN A7
+#define VOLTAGE_PIN A0
 #define VOLTAGE_R1 9100
 #define VOLTAGE_R2 1000
 
