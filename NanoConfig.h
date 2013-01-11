@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID         210
-#define NANO_VERSION       "1.0.2"
+#define NANO_VERSION       "1.0.3"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -15,7 +15,7 @@
 // Enable or Disable features
 //
 
-#define ENABLE_DEBUG             1
+#define ENABLE_DEBUG             0
 #define ENABLE_DIAGNOSTIC        0
 #define ENABLE_SSD1306           1
 #define ENABLE_SOFTGPS           1
@@ -29,7 +29,7 @@
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
-#define ENABLE_GEIGIE_SWITCH     0 // switch between bGeigie and xGeigie type
+#define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 #define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
 
