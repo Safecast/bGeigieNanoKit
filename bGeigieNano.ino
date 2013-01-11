@@ -262,7 +262,9 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 // ****************************************************************************
 void setup()
 {
+#ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
+#endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
   Serial.begin(9600);
@@ -431,11 +433,13 @@ void loop()
   enableSleepTimer();
 #endif
 
+#ifdef GPS_LED_PIN
   if ((gpsReady) || (gps_status == AVAILABLE)) {
     digitalWrite(GPS_LED_PIN, HIGH);
   } else {
     digitalWrite(GPS_LED_PIN, LOW);
   }
+#endif
 
   // generate CPM every TIME_INTERVAL seconds
   if IS_READY {
