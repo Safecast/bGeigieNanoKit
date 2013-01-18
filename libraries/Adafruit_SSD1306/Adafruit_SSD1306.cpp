@@ -28,7 +28,7 @@ All text above, and the splash screen below must be included in any redistributi
 #include "glcdfont.c"
 
 // a 5x7 font table
-extern uint8_t PROGMEM font[];
+extern const uint8_t PROGMEM font[];
 
 // the memory buffer for the LCD
 
