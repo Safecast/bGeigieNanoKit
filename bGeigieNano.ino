@@ -54,7 +54,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
 #if (SSD1306_LCDHEIGHT != 32)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#error("Height incorrect, please change Adafruit_SSD1306.h!");
+#endif
+
+#if (_SS_MAX_RX_BUFF < 128)
+#error("Serial RX buffer to small, please change in SoftwareSerial.h!");
 #endif
 
 // For distance computation
