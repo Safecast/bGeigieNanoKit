@@ -71,7 +71,7 @@ unsigned long int gps_distance = 0;
 #define NX 12
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
-
+#define DEFAULT_YEAR 2013
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
@@ -256,7 +256,9 @@ void enterSleep(void)
 // Nano Settings --------------------------------------------------------------
 static ConfigType config;
 static DoseType dose;
+#if ENABLE_OPENLOG
 NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
+#endif
 
 // ****************************************************************************
 // Setup
@@ -265,6 +267,9 @@ void setup()
 {
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
+#endif
+#ifdef LOGALARM_LED_PIN
+  pinMode(LOGALARM_LED_PIN, OUTPUT);
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
@@ -276,10 +281,10 @@ void setup()
   wdt_reset();
 #endif
 
+#if ENABLE_OPENLOG
   // Load EEPROM settings
   nanoSetup.initialize();
 
-#if ENABLE_OPENLOG
   DEBUG_PRINTLN("Initializing OpenLog.");
   OpenLog.begin(9600);
   setupOpenLog();
@@ -401,7 +406,7 @@ void loop()
   gpsSerial.listen();
 #endif
 
-  // For one second we parse GPS sentences
+  // For GPS_INTERVAL we work on parsing GPS sentences
   for (unsigned long start = millis(); (elapsedTime(start) < GPS_INTERVAL) and !IS_READY;)
   {
 #if ENABLE_STATIC_GPS
@@ -506,6 +511,9 @@ void loop()
            logfile_ready = true;
 
 #if ENABLE_OPENLOG
+#ifdef LOGALARM_LED_PIN
+           digitalWrite(LOGALARM_LED_PIN, HIGH);
+#endif
            DEBUG_PRINTLN("Create new logfile.");
            createFile(logfile_name);
            // print header to serial
@@ -519,7 +527,7 @@ void loop()
 #ifdef ENABLE_LND_DEADTIME
            sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n"));
 #else
-           sprintf_P(strbuffer, PSTR("nano\n));
+           sprintf_P(strbuffer, PSTR("nano\n"));
 #endif
            OpenLog.print(strbuffer);
            DEBUG_PRINT(strbuffer);
@@ -536,7 +544,7 @@ void loop()
                config.sensor_mode);
            OpenLog.print(line);
            Serial.print(line);
-#endif
+#endif // ENABLE_OPENLOG
          }
       }
 
@@ -551,6 +559,9 @@ void loop()
 
 #if ENABLE_OPENLOG
       if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
+#ifdef LOGALARM_LED_PIN
+        digitalWrite(LOGALARM_LED_PIN, HIGH);
+#endif
         // Put OpenLog serial in listen mode
         OpenLog.listen();
         OpenLog.println(line);
@@ -561,6 +572,9 @@ void loop()
         OpenLog.println(strbuffer);
 #endif
       }
+#ifdef LOGALARM_LED_PIN
+      digitalWrite(LOGALARM_LED_PIN, LOW);
+#endif
 #endif
   }
 
@@ -714,7 +728,7 @@ unsigned long cpm_gen()
 
 /* generate log filename */
 bool gps_gen_filename(TinyGPS &gps, char *buf) {
-  int year = 2012;
+  int year = DEFAULT_YEAR;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   unsigned long age;
 
@@ -756,7 +770,7 @@ float get_wgs84_coordinate(unsigned long val)
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
-  int year = 2012;
+  int year = DEFAULT_YEAR;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   long int x = 0, y = 0;
   float faltitude = 0, fspeed = 0;

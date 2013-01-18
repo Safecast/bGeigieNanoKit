@@ -55,7 +55,7 @@
   #define OPENLOG_RX_PIN 6
   #define OPENLOG_TX_PIN 5
   #define OPENLOG_RST_PIN 4
-  #define GPS_LED_PIN A4
+  #define LOGALARM_LED_PIN A4
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
