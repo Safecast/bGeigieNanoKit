@@ -3,7 +3,7 @@
 This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1010.
 
 # Acknowledgements
-This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
+This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
 
 # Requirements
 * [Arduino Fio][3]
