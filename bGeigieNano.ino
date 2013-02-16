@@ -835,8 +835,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
               lon, WE,\
               strbuffer, \
               gps_status, \
-              precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission, \
-              nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat);
+              nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat, \
+              precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
 
   len = strlen(buf);
   buf[len] = '\0';
