@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.3">
+<eagle version="6.4">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -5098,7 +5098,7 @@ Please make sure your boards conform to these design rules.</description>
 <attribute name="NAME" x="50.927" y="60.2615" size="1.27" layer="25" ratio="10"/>
 <attribute name="VALUE" x="45.9994" y="58.42" size="1.27" layer="27" ratio="10"/>
 </element>
-<element name="R5" library="rcl" package="0207/10" value="1k" x="30.48" y="39.37" smashed="yes" rot="R270">
+<element name="R5" library="rcl" package="0207/10" value="4.7k" x="30.48" y="39.37" smashed="yes" rot="R270">
 <attribute name="NAME" x="31.1785" y="30.607" size="1.27" layer="25" ratio="10" rot="R90"/>
 <attribute name="VALUE" x="31.115" y="38.3794" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
@@ -5114,7 +5114,7 @@ Please make sure your boards conform to these design rules.</description>
 <attribute name="NAME" x="14.859" y="32.893" size="1.27" layer="25" ratio="10" rot="R270"/>
 <attribute name="VALUE" x="14.605" y="40.6781" size="1.27" layer="27" ratio="10" rot="R270"/>
 </element>
-<element name="R9" library="rcl" package="0207/10" value="1k" x="19.05" y="39.37" smashed="yes" rot="R90">
+<element name="R9" library="rcl" package="0207/10" value="4.7k" x="19.05" y="39.37" smashed="yes" rot="R90">
 <attribute name="NAME" x="18.3515" y="32.893" size="1.27" layer="25" ratio="10" rot="R270"/>
 <attribute name="VALUE" x="18.415" y="40.3606" size="1.27" layer="27" ratio="10" rot="R270"/>
 </element>
