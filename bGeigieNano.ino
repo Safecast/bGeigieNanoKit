@@ -88,6 +88,8 @@ unsigned long reg_index = 0;
 unsigned long total_count = 0;
 unsigned long max_count = 0;
 unsigned long uptime = 0;
+int uphour = 0;
+int upminute = 0;
 int str_count = 0;
 char geiger_status = VOID;
 
@@ -892,9 +894,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // bGeigie mode
     // **********************************************************************
     // Display uptime
-    hour = uptime/3600;
-    minute = uptime/60 - hour*60;
-    sprintf_P(strbuffer, PSTR("%02dh%02dm"), hour, minute);
+    uphour = uptime/3600;
+    upminute = uptime/60 - uphour*60;
+    sprintf_P(strbuffer, PSTR("%02dh%02dm"), uphour, upminute);
     display.setCursor(92, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
