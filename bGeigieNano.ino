@@ -360,7 +360,10 @@ void setup()
   
   display.setCursor(8, 8);
   int battery =((read_voltage(VOLTAGE_PIN)-30)*12.5);
+    if (battery < 0) battery=1;
+    if (battery > 100) battery=100;
   sprintf_P(strbuffer, PSTR("Battery= %02d"), battery); 
+  
   display.print(strbuffer);
   sprintf_P(strbuffer, PSTR("%%"));
   display.print(strbuffer);
@@ -380,7 +383,7 @@ void setup()
     display.print(config.user_name);
   }
   display.display();
-   delay(5000);
+   delay(4000);
   
 #endif
 
@@ -460,9 +463,9 @@ void loop()
 
 #ifdef GPS_LED_PIN
   if ((gpsReady) || (gps_status == AVAILABLE)) {
-    digitalWrite(GPS_LED_PIN, HIGH);
+   // digitalWrite(GPS_LED_PIN, HIGH);
   } else {
-    digitalWrite(GPS_LED_PIN, LOW);
+   // digitalWrite(GPS_LED_PIN, LOW);
   }
 #endif
 
@@ -531,7 +534,7 @@ void loop()
 
 #if ENABLE_OPENLOG
 #ifdef LOGALARM_LED_PIN
-           digitalWrite(LOGALARM_LED_PIN, HIGH);
+           //digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
            DEBUG_PRINTLN("Create new logfile.");
            createFile(logfile_name);
@@ -579,7 +582,7 @@ void loop()
 #if ENABLE_OPENLOG
       if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
 #ifdef LOGALARM_LED_PIN
-        digitalWrite(LOGALARM_LED_PIN, HIGH);
+        //digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
         // Put OpenLog serial in listen mode
         OpenLog.listen();
@@ -592,7 +595,7 @@ void loop()
 #endif
       }
 #ifdef LOGALARM_LED_PIN
-      digitalWrite(LOGALARM_LED_PIN, LOW);
+      //digitalWrite(LOGALARM_LED_PIN, LOW);
 #endif
 #endif
   }
@@ -916,6 +919,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextColor(WHITE);
     display.println(strbuffer);
 
+	//Display Alarm LED if GPS is locked and Radiation is valid
+	#ifdef LOGALARM_LED_PIN
+	    if ((geiger_status == AVAILABLE) && (gps_status == AVAILABLE))
+        digitalWrite(LOGALARM_LED_PIN, HIGH);
+    #endif
+	
+
     // Display CPM (with deadtime compensation)
     display.setCursor(0, offset);
     display.setTextSize(2);
@@ -998,7 +1008,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // **********************************************************************
     // xGeigie mode
     // **********************************************************************
-
+    // LED Log/alarm set for alarm
+    digitalWrite(LOGALARM_LED_PIN, LOW);
     // Display uSv/h
     if (VOID == geiger_status) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
@@ -1006,7 +1017,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     int battery = ((read_voltage(VOLTAGE_PIN)-30));
-    if (battery <1) {
+    if (battery < 1) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
     } else {
       display.setTextColor(WHITE);
@@ -1023,7 +1034,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextColor(WHITE);
 		if (toggle) {
 		int battery = ((read_voltage(VOLTAGE_PIN)-30));
-		if (battery <1){
+		if (battery < 1){
 		 display.setTextColor(BLACK, WHITE); // 'inverted' text
 		 display.print("BATTERY LOW.NO LOGGER");
 		} else {
@@ -1046,7 +1057,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  display.print(strbuffer);
 		}} else {
 		int battery = ((read_voltage(VOLTAGE_PIN)-30));
-		if (battery <1){
+		if (battery < 1 ){
 		display.setTextColor(BLACK, WHITE); // 'inverted' text
 		 display.print("BATTERY LOW.NO LOGGER");
 		} else {
