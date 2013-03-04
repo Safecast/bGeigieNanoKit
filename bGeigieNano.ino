@@ -1024,7 +1024,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		if (toggle) {
 		int battery = ((read_voltage(VOLTAGE_PIN)-30));
 		if (battery <1){
-		 display.print("Battery low.No logger");
+		 display.setTextColor(BLACK, WHITE); // 'inverted' text
+		 display.print("BATTERY LOW.NO LOGGER");
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
@@ -1046,7 +1047,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		}} else {
 		int battery = ((read_voltage(VOLTAGE_PIN)-30));
 		if (battery <1){
-		 display.print("Battery low,No logger");
+		display.setTextColor(BLACK, WHITE); // 'inverted' text
+		 display.print("BATTERY LOW.NO LOGGER");
 		} else {
 		  // Total dose and max count
 		  sprintf_P(strbuffer, PSTR("Mx="));
