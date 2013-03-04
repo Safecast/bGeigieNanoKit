@@ -57,6 +57,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #error("Height incorrect, please change Adafruit_SSD1306.h!");
 #endif
 
+
 #if (_SS_MAX_RX_BUFF < 128)
 #error("Serial RX buffer to small, please change in SoftwareSerial.h!");
 #endif
@@ -328,14 +329,6 @@ void setup()
 
 #if ENABLE_EEPROM_DOSE
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
-  if (dose.total_time != 0) {
-    dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 2, strbuffer);
-    DEBUG_PRINT("Total dose = ");
-    DEBUG_PRINT(strbuffer);
-    DEBUG_PRINTLN(" uSv");
-  } else {
-    DEBUG_PRINTLN("Total dose = 0.00 uSv");
-  }
 #endif
 
   // setup analog reference to read battery and boost voltage
@@ -347,13 +340,11 @@ void setup()
 
 #if ENABLE_SSD1306
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
   // show splashscreen logo
   display.display();
-
+  
   delay(1000);
-
-  // show 2nd splashscreen
+  // show 3nd splashscreen
   display.clearDisplay();
 
   display.setTextColor(WHITE);
@@ -366,9 +357,20 @@ void setup()
     display.print("x");
   }
   display.print(strbuffer);
+  
+  display.setCursor(8, 8);
+  int battery =((read_voltage(VOLTAGE_PIN)-30)*12.5);
+  sprintf_P(strbuffer, PSTR("Battery= %02d"), battery); 
+  display.print(strbuffer);
+  sprintf_P(strbuffer, PSTR("%%"));
+  display.print(strbuffer);
+  
+  display.setCursor(8, 16);
+  sprintf_P(strbuffer, PSTR("Mode = Air %s"), config.sensor_mode);
+  display.print(strbuffer);
 
-  display.setTextSize(2);
-  display.setCursor(40, 8);
+  display.setTextSize(1);
+  display.setCursor(70, 16);
   sprintf_P(strbuffer, PSTR("#%04d"), config.device_id);
   display.print(strbuffer);
 
@@ -378,9 +380,11 @@ void setup()
     display.print(config.user_name);
   }
   display.display();
+   delay(5000);
+  
 #endif
 
-  Serial.println(availableMemory());
+  //Serial.println(availableMemory());
 
   DEBUG_PRINTLN("Setup completed.");
 }
@@ -395,9 +399,18 @@ void loop()
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
-    config.type = GEIGIE_TYPE_B; // xGeigie
+    config.type = GEIGIE_TYPE_B; // XGeigie
   } else {
-    config.type = GEIGIE_TYPE_X; // bGeigie
+    config.type = GEIGIE_TYPE_X; // BGeigie
+  }
+#endif
+
+#if ENABLE_GEIGIE_SWITCH
+  //Switch to bGiegei Xmode on low battery
+    int battery = ((read_voltage(VOLTAGE_PIN)-30));
+    if (battery < 1)  { 
+       delay(1000);
+       config.type = GEIGIE_TYPE_X; // BGeigie
   }
 #endif
 
@@ -595,6 +608,7 @@ void loop()
     enterSleep();
   }
 #endif
+
 
 }
 
@@ -897,7 +911,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     uphour = uptime/3600;
     upminute = uptime/60 - uphour*60;
     sprintf_P(strbuffer, PSTR("%02dh%02dm"), uphour, upminute);
-    display.setCursor(92, offset+16);
+    display.setCursor(80, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.println(strbuffer);
@@ -991,6 +1005,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     } else {
       display.setTextColor(WHITE);
     }
+    int battery = ((read_voltage(VOLTAGE_PIN)-30));
+    if (battery <1) {
+      display.setTextColor(BLACK, WHITE); // 'inverted' text
+    } else {
+      display.setTextColor(WHITE);
+    }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
     dtostrf((float)(cpm/config.cpm_factor), 0, 2, strbuffer);
@@ -1001,39 +1021,48 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    if (toggle) {
-      // Display CPM
-      if (cpm > 1000) {
-        dtostrf((float)(cpm/1000), 0, 1, strbuffer);
-        display.print(strbuffer);
-        display.print("k");
-      } else {
-        display.print(cpm);
-        display.print(" ");
-      }
-      sprintf_P(strbuffer, PSTR("CPM "));
-      display.print(strbuffer);
+		if (toggle) {
+		int battery = ((read_voltage(VOLTAGE_PIN)-30));
+		if (battery <1){
+		 display.print("Battery low.No logger");
+		} else {
+		  // Display CPM
+		  if (cpm > 1000) {
+			dtostrf((float)(cpm/1000), 0, 1, strbuffer);
+			display.print(strbuffer);
+			display.print("k");
+		  } else {
+			display.print(cpm);
+			display.print(" ");
+		  }
+		  sprintf_P(strbuffer, PSTR("CPM "));
+		  display.print(strbuffer);
 
-      // Display bq/m2
-      dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR(" Bq/m2"));
-      display.print(strbuffer);
-    } else {
-      // Total dose and max count
-      sprintf_P(strbuffer, PSTR("Mx="));
-      display.print(strbuffer);
-      dtostrf((float)(max_count/config.cpm_factor), 0, 1, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR("uS/h "));
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR("Ds="));
-      display.print(strbuffer);
-      dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 0, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR("uS"));
-      display.print(strbuffer);
-    }
+		  // Display bq/m2
+		  dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR(" Bq/m2"));
+		  display.print(strbuffer);
+		}} else {
+		int battery = ((read_voltage(VOLTAGE_PIN)-30));
+		if (battery <1){
+		 display.print("Battery low,No logger");
+		} else {
+		  // Total dose and max count
+		  sprintf_P(strbuffer, PSTR("Mx="));
+		  display.print(strbuffer);
+		  dtostrf((float)(max_count/config.cpm_factor), 0, 1, strbuffer);
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR("uS/h "));
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR("Ds="));
+		  display.print(strbuffer);
+		  dtostrf((float)( ((dose.total_count/(dose.total_time/60.0))/config.cpm_factor) * (dose.total_time/3600.0) ), 0, 0, strbuffer);
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR("uS"));
+		  display.print(strbuffer);
+		}
+     }
   } else {
     // Wrong mode
     display.setCursor(0, offset);
@@ -1042,6 +1071,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     sprintf_P(strbuffer, PSTR("Wrong mode !"));
     display.print(strbuffer);
   }
+
 
   // **********************************************************************
   // Common display parts
@@ -1058,9 +1088,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // Display battery indicator
   // Range = [3.5v to 4.3v]
-  //int battery = ((read_voltage(VOLTAGE_PIN)-3.5)*8/0.8);
   int battery =((read_voltage(VOLTAGE_PIN)-30));
-  if (battery < 0) battery = 0;
+  if (battery < 0) battery = 0;	
   if (battery > 8) battery = 8;
 
 display.drawRect(116, offset+24, 12, 7, WHITE);
@@ -1146,6 +1175,8 @@ float read_voltage(int pin)
 {
   static float voltage_divider = (float)VOLTAGE_R2 / (VOLTAGE_R1 + VOLTAGE_R2);
   float result = (float)analogRead(pin)/1024 *10 / voltage_divider;
+  
+  
   return result;
 }
 
