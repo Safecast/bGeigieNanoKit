@@ -78,6 +78,7 @@ unsigned long int gps_distance = 0;
 #define VOID      'V'  // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
 
+
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
 char logfile_name[13];  // placeholder for filename
@@ -363,17 +364,23 @@ void setup()
     if (battery < 0) battery=1;
     if (battery > 100) battery=100;
   sprintf_P(strbuffer, PSTR("Battery= %02d"), battery); 
-  
   display.print(strbuffer);
   sprintf_P(strbuffer, PSTR("%%"));
   display.print(strbuffer);
+    
+  display.setCursor(55, 16);
+  sprintf_P(strbuffer, PSTR("Alarm=%d"), config.alarm_level);
+  display.print(strbuffer);
+  sprintf_P(strbuffer, PSTR("CPM"));
+  display.print(strbuffer);
   
+
   display.setCursor(8, 16);
-  sprintf_P(strbuffer, PSTR("Mode = Air %s"), config.sensor_mode);
+  sprintf_P(strbuffer, PSTR("Mode =%d"), config.sensor_mode);
   display.print(strbuffer);
 
   display.setTextSize(1);
-  display.setCursor(70, 16);
+  display.setCursor(85, 8);
   sprintf_P(strbuffer, PSTR("#%04d"), config.device_id);
   display.print(strbuffer);
 
@@ -383,7 +390,7 @@ void setup()
     display.print(config.user_name);
   }
   display.display();
-   delay(4000);
+   delay(9000);
   
 #endif
 
@@ -405,6 +412,7 @@ void loop()
     config.type = GEIGIE_TYPE_B; // XGeigie
   } else {
     config.type = GEIGIE_TYPE_X; // BGeigie
+    digitalWrite(LOGALARM_LED_PIN, LOW);
   }
 #endif
 
@@ -1009,7 +1017,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // xGeigie mode
     // **********************************************************************
     // LED Log/alarm set for alarm
-    digitalWrite(LOGALARM_LED_PIN, LOW);
+    	digitalWrite(LOGALARM_LED_PIN, LOW);
+    	if(cpm > config.alarm_level){
+    	digitalWrite(LOGALARM_LED_PIN, HIGH);
+    	} else {
+    	digitalWrite(LOGALARM_LED_PIN, LOW);
+    	}
     // Display uSv/h
     if (VOID == geiger_status) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
