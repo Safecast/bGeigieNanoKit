@@ -361,6 +361,7 @@ void setup()
   
   display.setCursor(8, 8);
   int battery =((read_voltage(VOLTAGE_PIN)-30)*12.5);
+  battery=(battery+20);
     if (battery < 0) battery=1;
     if (battery > 100) battery=100;
   sprintf_P(strbuffer, PSTR("Battery= %02d"), battery); 
