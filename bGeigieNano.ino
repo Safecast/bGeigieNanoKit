@@ -418,7 +418,7 @@ void loop()
 #endif
 
 #if ENABLE_GEIGIE_SWITCH
-  //Switch to bGiegei Xmode on low battery
+  //Switch to bGeigie Xmode on low battery
     int battery = ((read_voltage(VOLTAGE_PIN)-30));
     if (battery < 1)  { 
        delay(1000);
@@ -944,7 +944,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     if (cpm > 1000) {
-      dtostrf((float)(cpm/1000), 0, 1, strbuffer);
+      dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
       display.print(strbuffer);
       display.print("k");
     } else {
@@ -1054,7 +1054,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			dtostrf((float)(cpm/1000), 0, 1, strbuffer);
+			dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
 			display.print(strbuffer);
 			display.print("k");
 		  } else {
