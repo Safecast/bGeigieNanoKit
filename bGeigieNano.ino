@@ -930,10 +930,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
 	//Display Alarm LED if GPS is locked and Radiation is valid
 	#ifdef LOGALARM_LED_PIN
-	    if ((geiger_status == AVAILABLE) && (gps_status == AVAILABLE))
-        digitalWrite(LOGALARM_LED_PIN, HIGH);
+	    if ((geiger_status == AVAILABLE) && (gps.status())){
+            digitalWrite(LOGALARM_LED_PIN, HIGH);
+           } else {
+            digitalWrite(LOGALARM_LED_PIN, LOW);
+          }
     #endif
-	
+
 
     // Display CPM (with deadtime compensation)
     display.setCursor(0, offset);
