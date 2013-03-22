@@ -947,7 +947,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     if (cpm > 1000) {
-      dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
+      dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
       display.print(strbuffer);
       display.print("k");
     } else {
@@ -1057,7 +1057,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
+			dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
 			display.print(strbuffer);
 			display.print("k");
 		  } else {
