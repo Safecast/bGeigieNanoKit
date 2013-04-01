@@ -923,7 +923,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     uphour = uptime/3600;
     upminute = uptime/60 - uphour*60;
     sprintf_P(strbuffer, PSTR("%02dh%02dm"), uphour, upminute);
-    display.setCursor(80, offset+16);
+    display.setCursor(92, offset+16);
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.println(strbuffer);
@@ -947,9 +947,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     if (cpm > 1000) {
-      dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
+      dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
       display.print(strbuffer);
       display.print("k");
+      display.setTextSize(1);
     } else {
       dtostrf((float)cpm, 0, 0, strbuffer);
       display.print(strbuffer);
@@ -1043,6 +1044,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, offset); // textsize*8
     dtostrf((float)(cpm/config.cpm_factor), 0, 2, strbuffer);
     display.print(strbuffer);
+    if (cpm > 5000) {
+      display.setTextSize(1);
+    } else {
+      display.setTextSize(2);
+    }
     sprintf_P(strbuffer, PSTR(" uS/h"));
     display.print(strbuffer);
 
@@ -1060,6 +1066,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 			dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
 			display.print(strbuffer);
 			display.print("k");
+			
 		  } else {
 			display.print(cpm);
 			display.print(" ");
