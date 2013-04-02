@@ -93,11 +93,13 @@ unsigned long uptime = 0;
 int uphour = 0;
 int upminute = 0;
 int str_count = 0;
+int maxLength_over_k = 3;
 char geiger_status = VOID;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
 static char strbuffer[STRBUFFER_SZ];
+static char strbuffer1[STRBUFFER_SZ];
 
 // Pulse counter --------------------------------------------------------------
 #if ENABLE_HARDWARE_COUNTER
@@ -947,10 +949,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     if (cpm > 1000) {
-      dtostrf((float)(cpm/1000.00), 3, 2, strbuffer);
-      display.print(strbuffer);
+      dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
+      strncpy (strbuffer1, strbuffer, 3);
+      display.print(strbuffer1);
       display.print("k");
-      display.setTextSize(1);
     } else {
       dtostrf((float)cpm, 0, 0, strbuffer);
       display.print(strbuffer);
@@ -1042,13 +1044,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
-    dtostrf((float)(cpm/config.cpm_factor), 0, 2, strbuffer);
-    display.print(strbuffer);
-    if (cpm > 5000) {
-      display.setTextSize(1);
-    } else {
-      display.setTextSize(2);
-    }
+    dtostrf((float)(cpm/config.cpm_factor), 0, 1, strbuffer);
+    strncpy (strbuffer1, strbuffer, 5);
+    display.print(strbuffer1);
     sprintf_P(strbuffer, PSTR(" uS/h"));
     display.print(strbuffer);
 
@@ -1064,7 +1062,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  // Display CPM
 		  if (cpm > 1000) {
 			dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
-			display.print(strbuffer);
+		    strncpy (strbuffer1, strbuffer, 4);
+            display.print(strbuffer1);
 			display.print("k");
 			
 		  } else {
