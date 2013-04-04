@@ -953,7 +953,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       strncpy (strbuffer1, strbuffer, 4);
       if (strbuffer1[strlen(strbuffer1)-1] == '.') {
       strbuffer1[strlen(strbuffer1)-1] = 0;
-      
       } 
       display.print(strbuffer1);
       sprintf_P(strbuffer, PSTR("kCPM"));
@@ -1049,11 +1048,28 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
-    dtostrf((float)(cpm/config.cpm_factor), 4, 3, strbuffer);
+    
+    
+    if ((cpm/config.cpm_factor) >1000) {
+    dtostrf((float)(cpm/config.cpm_factor/1000), 4, 3, strbuffer);
+    
     strncpy (strbuffer1, strbuffer, 6);
+	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+		  strbuffer1[strlen(strbuffer1)-1] = 0;
+		  }
     display.print(strbuffer1);
-    sprintf_P(strbuffer, PSTR(" uS/h"));
+    sprintf_P(strbuffer, PSTR("mS/h"));
     display.print(strbuffer);
+} else {
+    dtostrf((float)(cpm/config.cpm_factor), 4, 2, strbuffer);
+    strncpy (strbuffer1, strbuffer, 8);
+	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+		  strbuffer1[strlen(strbuffer1)-1] = 0;
+		  }
+    display.print(strbuffer1);
+    sprintf_P(strbuffer, PSTR("uS/h"));
+    display.print(strbuffer);
+    }
 
     display.setCursor(0, offset+16);
     display.setTextSize(1);
@@ -1066,17 +1082,20 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
-		    strncpy (strbuffer1, strbuffer, 4);
-            display.print(strbuffer1);
-			display.print("k");
-			
-		  } else {
-			display.print(cpm);
-			display.print(" ");
-		  }
-		  sprintf_P(strbuffer, PSTR("CPM "));
-		  display.print(strbuffer);
+			  dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
+			  strncpy (strbuffer1, strbuffer, 4);
+			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+			  strbuffer1[strlen(strbuffer1)-1] = 0;
+			  } 
+			  display.print(strbuffer1);
+			  sprintf_P(strbuffer, PSTR("kCPM"));
+			  display.print(strbuffer);
+			} else {
+			  dtostrf((float)cpm, 0, 0, strbuffer);
+			  display.print(strbuffer);
+			  sprintf_P(strbuffer, PSTR(" CPM"));
+			  display.print(strbuffer);
+			}
 
 		  // Display bq/m2
 		  dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
