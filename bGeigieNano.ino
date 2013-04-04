@@ -949,16 +949,21 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       display.setTextColor(WHITE);
     }
     if (cpm > 1000) {
-      dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
-      strncpy (strbuffer1, strbuffer, 3);
+      dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
+      strncpy (strbuffer1, strbuffer, 4);
+      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+      strbuffer1[strlen(strbuffer1)-1] = 0;
+      
+      } 
       display.print(strbuffer1);
-      display.print("k");
+      sprintf_P(strbuffer, PSTR("kCPM"));
+      display.print(strbuffer);
     } else {
       dtostrf((float)cpm, 0, 0, strbuffer);
       display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR(" CPM"));
+      display.print(strbuffer);
     }
-    sprintf_P(strbuffer, PSTR(" CPM"));
-    display.print(strbuffer);
 
     // Display SD, GPS and Geiger states
     if (openlog_ready) {
@@ -1044,8 +1049,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
-    dtostrf((float)(cpm/config.cpm_factor), 0, 1, strbuffer);
-    strncpy (strbuffer1, strbuffer, 5);
+    dtostrf((float)(cpm/config.cpm_factor), 4, 3, strbuffer);
+    strncpy (strbuffer1, strbuffer, 6);
     display.print(strbuffer1);
     sprintf_P(strbuffer, PSTR(" uS/h"));
     display.print(strbuffer);
@@ -1061,7 +1066,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			dtostrf((float)(cpm/1000.00), 2, 1, strbuffer);
+			dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
 		    strncpy (strbuffer1, strbuffer, 4);
             display.print(strbuffer1);
 			display.print("k");
