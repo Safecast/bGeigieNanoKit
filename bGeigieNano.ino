@@ -1051,7 +1051,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     
     
     if ((cpm/config.cpm_factor) >1000) {
-    dtostrf((float)(cpm/config.cpm_factor/1000), 4, 3, strbuffer);
+    dtostrf((float)(cpm/config.cpm_factor/1000.00), 4, 2, strbuffer);
     
     strncpy (strbuffer1, strbuffer, 6);
 	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
@@ -1061,8 +1061,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     sprintf_P(strbuffer, PSTR("mS/h"));
     display.print(strbuffer);
 } else {
-    dtostrf((float)(cpm/config.cpm_factor), 4, 2, strbuffer);
-    strncpy (strbuffer1, strbuffer, 8);
+    dtostrf((float)(cpm/config.cpm_factor/1.000), 4, 3, strbuffer);
+    strncpy (strbuffer1, strbuffer, 6);
 	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 		  strbuffer1[strlen(strbuffer1)-1] = 0;
 		  }
