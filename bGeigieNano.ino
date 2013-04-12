@@ -203,7 +203,6 @@ ISR(WDT_vect)
   }
   else
   {
-    DEBUG_PRINTLN("WARNING: WDT Overrun");
   }
 }
 
@@ -295,7 +294,6 @@ void setup()
   // Load EEPROM settings
   nanoSetup.initialize();
 
-  DEBUG_PRINTLN("Initializing OpenLog.");
   OpenLog.begin(9600);
   setupOpenLog();
   if (openlog_ready) {
@@ -303,7 +301,6 @@ void setup()
   }
 #endif
 
-  DEBUG_PRINTLN("Initializing pulse counter.");
 
 #if ENABLE_HARDWARE_COUNTER
   // Start the Pulse Counter!
@@ -317,7 +314,6 @@ void setup()
 #endif
 
 #if ENABLE_SOFTGPS
-  DEBUG_PRINTLN("Initializing GPS.");
   gpsSerial.begin(9600);
 
   // Put GPS serial in listen mode
@@ -327,8 +323,6 @@ void setup()
   gps_program_settings();
 #endif
 
-  DEBUG_PRINT("Devide id = ");
-  DEBUG_PRINTLN(config.device_id);
 
 #if ENABLE_EEPROM_DOSE
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
@@ -399,7 +393,6 @@ void setup()
 
   //Serial.println(availableMemory());
 
-  DEBUG_PRINTLN("Setup completed.");
 }
 
 // ****************************************************************************
@@ -547,7 +540,6 @@ void loop()
 #ifdef LOGALARM_LED_PIN
            //digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
-           DEBUG_PRINTLN("Create new logfile.");
            createFile(logfile_name);
            // print header to serial
            sprintf_P(strbuffer, PSTR(LOGFILE_HEADER));
@@ -655,9 +647,7 @@ bool waitOpenLog(bool commandMode) {
   }
 
   if (safeguard >= OPENLOG_RETRY) {
-    DEBUG_PRINTLN("OpenLog init failed ! Check if the CONFIG.TXT is set to 9600,26,3,2");
   } else {
-    DEBUG_PRINTLN(" - ready");
     result = true;
   }
 
@@ -670,7 +660,6 @@ void setupOpenLog() {
   OpenLog.listen();
 
   // reset OpenLog
-  DEBUG_PRINTLN(" - reset");
   digitalWrite(resetOpenLog, LOW);
   delay(100);
   digitalWrite(resetOpenLog, HIGH);
@@ -698,17 +687,12 @@ void createFile(char *fileName) {
       wdt_reset();
 #endif
 
-      DEBUG_PRINT(" - append ");
-      DEBUG_PRINTLN(fileName);
 
       OpenLog.print("append ");
       OpenLog.print(fileName);
       OpenLog.write(13); //This is \r
 
-      // wait for OpenLog to indicate file is open and ready for writing
-      DEBUG_PRINTLN(" - wait");
       if (!waitOpenLog(false)) {
-        DEBUG_PRINTLN("Append file failed");
         break;
       }
       result = 1;
@@ -716,7 +700,6 @@ void createFile(char *fileName) {
 
     if (0 == result) {
       // reset OpenLog
-      DEBUG_PRINTLN(" - reset");
       digitalWrite(resetOpenLog, LOW);
       delay(100);
       digitalWrite(resetOpenLog, HIGH);
@@ -933,7 +916,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 	//Display Alarm LED if GPS is locked and Radiation is valid
 	#ifdef LOGALARM_LED_PIN
 	    if ((geiger_status == AVAILABLE) && (gps.status())){
-            digitalWrite(LOGALARM_LED_PIN, HIGH);
+			if (openlog_ready) {
+				  digitalWrite(LOGALARM_LED_PIN, HIGH);
+			} else { 
+			digitalWrite(LOGALARM_LED_PIN, LOW);
+			}          
            } else {
             digitalWrite(LOGALARM_LED_PIN, LOW);
           }
@@ -951,9 +938,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (cpm > 1000) {
       dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
       strncpy (strbuffer1, strbuffer, 4);
-      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-      strbuffer1[strlen(strbuffer1)-1] = 0;
-      } 
+		  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+		  strbuffer1[strlen(strbuffer1)-1] = 0;
+		  } 
       display.print(strbuffer1);
       sprintf_P(strbuffer, PSTR("kCPM"));
       display.print(strbuffer);
@@ -965,15 +952,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     }
 
     // Display SD, GPS and Geiger states
-    if (openlog_ready) {
-      display.setTextColor(WHITE);
-    } else {
-      if (toggle) {
-        display.setTextColor(BLACK, WHITE); // 'inverted' text
-      } else {
-        display.setTextColor(WHITE);
-      }
-    }
+    display.setTextColor(WHITE);
     display.setTextSize(1);
     if (!gps.status()) {
       display.setCursor(92, offset);
@@ -1034,6 +1013,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     	} else {
     	digitalWrite(LOGALARM_LED_PIN, LOW);
     	}
+    	
     // Display uSv/h
     if (VOID == geiger_status) {
       display.setTextColor(BLACK, WHITE); // 'inverted' text
@@ -1136,15 +1116,23 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   // **********************************************************************
   // Common display parts
   // **********************************************************************
+   if (openlog_ready) {
+     // Display date
+		  sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
+				day, month, \
+				hour, minute, second);
+		  display.setCursor(0, offset+24); // textsize*8
+		  display.setTextSize(1);
+		  display.setTextColor(WHITE);
+		  display.println(strbuffer);
+    } else {
+    	  display.setCursor(0, offset+24); // textsize*8
+		  display.setTextSize(1);
+		  display.setTextColor(BLACK, WHITE); // 'inverted' text
+          sprintf_P(strbuffer, PSTR("NO SD CARD"));
+		  display.print(strbuffer);
+    }
 
-  // Display date
-  sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
-        day, month, \
-        hour, minute, second);
-  display.setCursor(0, offset+24); // textsize*8
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.println(strbuffer);
 
   // Display battery indicator
   // Range = [3.5v to 4.3v]
