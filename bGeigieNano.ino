@@ -1062,27 +1062,45 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			  dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
-			  strncpy (strbuffer1, strbuffer, 4);
+			  dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
+			  strncpy (strbuffer1, strbuffer, 5);
 			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 			  strbuffer1[strlen(strbuffer1)-1] = 0;
 			  } 
 			  display.print(strbuffer1);
-			  sprintf_P(strbuffer, PSTR("kCPM"));
+			  sprintf_P(strbuffer, PSTR("kCPM "));
 			  display.print(strbuffer);
 			} else {
 			  dtostrf((float)cpm, 0, 0, strbuffer);
 			  display.print(strbuffer);
-			  sprintf_P(strbuffer, PSTR(" CPM"));
+			  sprintf_P(strbuffer, PSTR("CPM "));
 			  display.print(strbuffer);
 			}
 
 		  // Display bq/m2
-		  dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
-		  display.print(strbuffer);
-		  sprintf_P(strbuffer, PSTR(" Bq/m2"));
-		  display.print(strbuffer);
-		}} else {
+		   if ((cpm*config.bqm_factor) >1000000) {
+				dtostrf((float)(cpm*config.bqm_factor/1000000.0), 0, 1, strbuffer);
+				strncpy (strbuffer1, strbuffer, 5);
+				display.print(strbuffer1);
+				sprintf_P(strbuffer, PSTR("mBq/m2"));
+				display.print(strbuffer);
+		  
+			  }else{
+			   if ((cpm*config.bqm_factor) >10000) {
+					dtostrf((float)(cpm*config.bqm_factor/1000.0), 0, 0, strbuffer);
+					strncpy (strbuffer1, strbuffer, 5);
+					display.print(strbuffer1);
+					sprintf_P(strbuffer, PSTR("kBq/m2"));
+					display.print(strbuffer);
+				}else{
+				  dtostrf((float)(cpm*config.bqm_factor), 0, 0, strbuffer);
+				  display.print(strbuffer);
+				  sprintf_P(strbuffer, PSTR("Bq/m2"));
+				  display.print(strbuffer);
+				}
+			}
+		  }	
+		} else {
 		int battery = ((read_voltage(VOLTAGE_PIN)-30));
 		if (battery < 1 ){
 		display.setTextColor(BLACK, WHITE); // 'inverted' text
