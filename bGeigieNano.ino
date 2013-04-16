@@ -1020,12 +1020,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     } else {
       display.setTextColor(WHITE);
     }
-    int battery = ((read_voltage(VOLTAGE_PIN)-30));
-    if (battery < 1) {
-      display.setTextColor(BLACK, WHITE); // 'inverted' text
-    } else {
-      display.setTextColor(WHITE);
-    }
     display.setTextSize(2);
     display.setCursor(0, offset); // textsize*8
     
