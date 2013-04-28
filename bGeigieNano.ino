@@ -69,7 +69,7 @@ unsigned long int gps_distance = 0;
 #endif
 
 // Geiger settings ------------------------------------------------------------
-#define TIME_INTERVAL 5000
+#define TIME_INTERVAL 5000	
 #define LINE_SZ 100
 #define BUFFER_SZ 12
 #define STRBUFFER_SZ 32
@@ -77,7 +77,6 @@ unsigned long int gps_distance = 0;
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
-
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
@@ -395,6 +394,8 @@ void setup()
 
 }
 
+
+
 // ****************************************************************************
 // Main loop
 // ****************************************************************************
@@ -405,10 +406,14 @@ void loop()
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
-    config.type = GEIGIE_TYPE_B; // XGeigie
+    config.type = GEIGIE_TYPE_B; // XGeigie;
+    //prepare for 1 second updates
+   // interruptCounterSetup(INTERRUPT_COUNTER_PIN, 5000);
   } else {
     config.type = GEIGIE_TYPE_X; // BGeigie
     digitalWrite(LOGALARM_LED_PIN, LOW);
+	//prepare for 1 second updates
+    //interruptCounterSetup(INTERRUPT_COUNTER_PIN, 1000);
   }
 #endif
 
@@ -956,9 +961,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextSize(1);
     if (!gps.status()) {
       display.setCursor(92, offset);
+      display.setTextColor(BLACK, WHITE); // 'inverted' text
       sprintf_P(strbuffer, PSTR("No GPS"));
       display.println(strbuffer);
     } else {
+      display.setTextColor(WHITE);
       display.setCursor(110, offset); 
       sprintf(strbuffer,"%2d", nbsat);
       display.print(strbuffer);
@@ -1027,12 +1034,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if ((cpm/config.cpm_factor) >1000) {
     dtostrf((float)(cpm/config.cpm_factor/1000.00), 4, 2, strbuffer);
     
-    strncpy (strbuffer1, strbuffer, 6);
+    strncpy (strbuffer1, strbuffer, 5);
 	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 		  strbuffer1[strlen(strbuffer1)-1] = 0;
 		  }
     display.print(strbuffer1);
-    sprintf_P(strbuffer, PSTR("mS/h"));
+    sprintf_P(strbuffer, PSTR(" mS/h"));
     display.print(strbuffer);
 } else {
     dtostrf((float)(cpm/config.cpm_factor/1.000), 4, 3, strbuffer);
@@ -1041,7 +1048,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  strbuffer1[strlen(strbuffer1)-1] = 0;
 		  }
     display.print(strbuffer1);
-    sprintf_P(strbuffer, PSTR("uS/h"));
+    sprintf_P(strbuffer, PSTR(" uS/h"));
     display.print(strbuffer);
     }
 
