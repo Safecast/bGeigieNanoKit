@@ -913,7 +913,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     uphour = uptime/3600;
     upminute = uptime/60 - uphour*60;
     sprintf_P(strbuffer, PSTR("%02dh%02dm"), uphour, upminute);
-    display.setCursor(92, offset+16);
+    display.setCursor(92, offset+24);
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.println(strbuffer);
@@ -960,13 +960,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setTextColor(WHITE);
     display.setTextSize(1);
     if (!gps.status()) {
-      display.setCursor(92, offset);
+      display.setCursor(92, offset+8);
       display.setTextColor(BLACK, WHITE); // 'inverted' text
       sprintf_P(strbuffer, PSTR("No GPS"));
       display.println(strbuffer);
     } else {
       display.setTextColor(WHITE);
-      display.setCursor(110, offset); 
+      display.setCursor(110, offset+8); 
       sprintf(strbuffer,"%2d", nbsat);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("^"));
@@ -993,7 +993,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (toggle) {
       // Display distance
       dtostrf((float)(gps_distance/1000.0), 0, 1, strbuffer);
-      display.setCursor(116-(strlen(strbuffer)*6), offset+8); // textsize*8
+      display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("km"));
       display.println(strbuffer);
@@ -1004,7 +1004,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       } else {
         sprintf_P(strbuffer, PSTR("--"));
       }
-      display.setCursor(122-(strlen(strbuffer)*6), offset+8); // textsize*8
+      display.setCursor(122-(strlen(strbuffer)*6), offset+16); // textsize*8
       display.print(strbuffer);
       display.println("m");
     }
@@ -1159,8 +1159,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   if (battery < 0) battery = 0;	
   if (battery > 8) battery = 8;
 
-display.drawRect(116, offset+24, 12, 7, WHITE);
-display.fillRect(118, offset+26, battery, 3, WHITE);
+display.drawRect(116, offset+0, 12, 7, WHITE);
+display.fillRect(118, offset+2, battery, 3, WHITE);
   
   display.display();
 #endif
