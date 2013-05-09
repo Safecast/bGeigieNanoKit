@@ -1,0 +1,36 @@
+TinyGPS.o: TinyGPS.cpp TinyGPS.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Arduino.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/binary.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/WCharacter.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/WString.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/HardwareSerial.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Stream.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Print.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Printable.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/new.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/variants/eightanaloginputs/pins_arduino.h \
+ /Users/rob/geigie/arduino-1.0.1//hardware/arduino/variants/eightanaloginputs/../standard/pins_arduino.h
+
+TinyGPS.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Arduino.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/binary.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/WCharacter.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/WString.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/HardwareSerial.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Stream.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Print.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/Printable.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/cores/arduino/new.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/variants/eightanaloginputs/pins_arduino.h:
+
+/Users/rob/geigie/arduino-1.0.1//hardware/arduino/variants/eightanaloginputs/../standard/pins_arduino.h:
