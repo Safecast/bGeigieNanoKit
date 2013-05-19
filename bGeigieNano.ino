@@ -608,17 +608,6 @@ void loop()
 #endif
   }
 
-#if ENABLE_SLEEPMODE
-    // Leave some time to serial to flush data
-    delay(100);
-
-    // Clear the flag
-    f_wdt = 0;
-
-    // Re-enter sleep mode
-    enterSleep();
-  }
-#endif
 
 
 }
@@ -940,21 +929,29 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     } else {
       display.setTextColor(WHITE);
     }
-    if (cpm > 1000) {
-      dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
-      strncpy (strbuffer1, strbuffer, 4);
-		  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-		  strbuffer1[strlen(strbuffer1)-1] = 0;
-		  } 
-      display.print(strbuffer1);
-      sprintf_P(strbuffer, PSTR("kCPM"));
-      display.print(strbuffer);
-    } else {
-      dtostrf((float)cpm, 0, 0, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR(" CPM"));
-      display.print(strbuffer);
-    }
+    
+    if (cpm > 10000) {
+    	  dtostrf((float)cpm, 0, 0, strbuffer);
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR("10kCPM"));
+		  display.print(strbuffer);
+    } else{
+		if (cpm > 1000) {
+		  dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
+		  strncpy (strbuffer1, strbuffer, 4);
+			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+			  strbuffer1[strlen(strbuffer1)-1] = 0;
+			  } 
+		  display.print(strbuffer1);
+		  sprintf_P(strbuffer, PSTR("kCPM"));
+		  display.print(strbuffer);
+		} else {
+		  dtostrf((float)cpm, 0, 0, strbuffer);
+		  display.print(strbuffer);
+		  sprintf_P(strbuffer, PSTR(" CPM"));
+		  display.print(strbuffer);
+		}
+	}
 
     // Display SD, GPS and Geiger states
     display.setTextColor(WHITE);
