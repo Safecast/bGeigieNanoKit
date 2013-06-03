@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        2013
-#define NANO_VERSION       "1.2.4"
+#define NANO_VERSION       "1.2.5"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -26,7 +26,7 @@
 #define ENABLE_WAIT_GPS_FOR_LOG  1
 #define ENABLE_GPS_NMEA_LOG      0
 #define ENABLE_100M_TRUNCATION   0
-#define ENABLE_MEDIATEK          0
+#define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317

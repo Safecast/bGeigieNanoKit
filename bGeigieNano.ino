@@ -560,20 +560,7 @@ void loop()
            sprintf_P(strbuffer, PSTR("nano\n"));
 #endif
            OpenLog.print(strbuffer);
-           DEBUG_PRINT(strbuffer);
 
-           // Settings dump
-           sprintf_P(line, PSTR("# nm=%s,tz=%d,cn=%s,cpmf=%d,st=%d,ss=%d,sh=%d,sm=%d\n"),
-               config.user_name,
-               config.timezone,
-               config.country_code,
-               (int)config.cpm_factor,
-               config.sensor_type,
-               config.sensor_shield,
-               config.sensor_height,
-               config.sensor_mode);
-           OpenLog.print(line);
-           Serial.print(line);
 #endif // ENABLE_OPENLOG
          }
       }
@@ -935,23 +922,22 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  display.print(strbuffer);
 		  sprintf_P(strbuffer, PSTR("10kCPM"));
 		  display.print(strbuffer);
-    } else{
-		if (cpm > 1000) {
+    } else if(cpm > 1000) {
 		  dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
 		  strncpy (strbuffer1, strbuffer, 4);
-			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-			  strbuffer1[strlen(strbuffer1)-1] = 0;
-			  } 
+		  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+		  strbuffer1[strlen(strbuffer1)-1] = 0;
+		  } 
 		  display.print(strbuffer1);
 		  sprintf_P(strbuffer, PSTR("kCPM"));
 		  display.print(strbuffer);
-		} else {
-		  dtostrf((float)cpm, 0, 0, strbuffer);
-		  display.print(strbuffer);
-		  sprintf_P(strbuffer, PSTR(" CPM"));
-		  display.print(strbuffer);
-		}
+	} else{
+	  dtostrf((float)cpm, 0, 0, strbuffer);
+	  display.print(strbuffer);
+	  sprintf_P(strbuffer, PSTR(" CPM"));
+	  display.print(strbuffer);
 	}
+
 
     // Display SD, GPS and Geiger states
     display.setTextColor(WHITE);
