@@ -152,7 +152,11 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
     if (i == 5) 
       line = 0x0;
     else 
+#ifdef INVISIBLE_ASCII
       line = pgm_read_byte(font+(c*5)+i);
+#else
+      line = pgm_read_byte(font+((c-32)*5)+i);
+#endif
     for (int8_t j = 0; j<8; j++) {
       if (line & 0x1) {
         if (size == 1) // default size
