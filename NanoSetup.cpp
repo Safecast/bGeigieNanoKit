@@ -178,7 +178,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
     }
     else if(strcmp(key, "did") == 0) {
       // Update device id in EEPROM
-      if (mConfig.device_id != atoi(value)) {
+      if (mConfig.device_id != (unsigned int)atoi(value)) {
         mConfig.device_id = atoi(value);
         config_changed = true;
         DEBUG_PRINTLN("   - Update devide id in EEPROM");
@@ -202,7 +202,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
     }
     else if(strcmp(key, "al") == 0) {
       // Update alarm threshold in EEPROM
-      if (mConfig.alarm_level != atoi(value)) {
+      if (mConfig.alarm_level != (unsigned int)atoi(value)) {
         mConfig.alarm_level = atoi(value);
         config_changed = true;
         DEBUG_PRINTLN("   - Update alarm threshold in EEPROM");
@@ -243,7 +243,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
     }
     else if(strcmp(key, "sh") == 0) {
       // Update sensor height in EEPROM
-      if (mConfig.sensor_height != atoi(value)) {
+      if (mConfig.sensor_height != (unsigned int)atoi(value)) {
         mConfig.sensor_height = atoi(value);
         config_changed = true;
         DEBUG_PRINTLN("   - Update sensor height in EEPROM");
