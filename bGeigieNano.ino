@@ -282,7 +282,7 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
-  Serial.begin(9600);
+  Serial.begin(14400);
 
 #ifndef ENABLE_SLEEPMODE
   // enable and reset the watchdog timer
