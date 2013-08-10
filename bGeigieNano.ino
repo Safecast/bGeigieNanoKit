@@ -42,6 +42,13 @@
 #include "NanoConfig.h"
 #include "NanoDebug.h"
 
+//GPS settings ----------------------------------------------------------------
+
+#if (_SS_MAX_RX_BUFF < 128)
+#error Serial RX buffer is too small for GPS communication, we need _SS_MAX_RX_BUFF >= 128
+#error Please edit SoftwareSerial.h from your Arduino installation accordingly.
+#endif
+
 // OLED settings --------------------------------------------------------------
 #if ENABLE_SSD1306
 #include <Wire.h>
@@ -58,10 +65,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #error("Height incorrect, please change Adafruit_SSD1306.h!");
 #endif
 
-
-#if (_SS_MAX_RX_BUFF < 128)
-#error("Serial RX buffer to small, please change in SoftwareSerial.h!");
-#endif
 
 // For distance computation
 bool gps_fix_first = true;
