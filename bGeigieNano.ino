@@ -770,7 +770,7 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
-void render_measurement(int value, bool is_cpm, int offset)
+void render_measurement(unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, offset);
   display.setTextSize(2);
@@ -785,12 +785,7 @@ void render_measurement(int value, bool is_cpm, int offset)
 
   // display in CPM
   if (is_cpm) {
-    if (value >= 10000) {
-      dtostrf((float)value/1000.0, 4, 1, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR("kCPM"));
-      display.print(strbuffer);
-    } else if(value >= 1000) {
+    if(value >= 10000) {
       dtostrf((float)(value/1000.0), 4, 3, strbuffer);
       strncpy (strbuffer1, strbuffer, 4);
       if (strbuffer1[strlen(strbuffer1)-1] == '.') {
