@@ -149,6 +149,8 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+#define PMTK_HOT_START "$PMTK101*32"
+#define PMTK_COLD_START "$PMTK104*37"
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
 #define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
 
@@ -285,6 +287,10 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
+#ifdef ENABLE_CUSTOM_FN
+  pinMode(CUSTOM_FN_PIN, INPUT);
+#endif
+
   Serial.begin(14400);
 
 #ifndef ENABLE_SLEEPMODE
@@ -303,7 +309,6 @@ void setup()
     nanoSetup.loadFromFile("SAFECAST.TXT");
   }
 #endif
-
 
 #if ENABLE_HARDWARE_COUNTER
   // Start the Pulse Counter!
@@ -393,6 +398,9 @@ void setup()
    delay(9000);
 
 #endif
+
+  // Clear LED
+  digitalWrite(LOGALARM_LED_PIN, LOW);
 
   //Serial.println(availableMemory());
 
@@ -598,8 +606,6 @@ void loop()
 #endif
 #endif
   }
-
-
 
 }
 
@@ -1056,7 +1062,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       int battery = ((read_voltage(VOLTAGE_PIN)-30));
       if (battery < 1) {
         display.setTextColor(BLACK, WHITE); // 'inverted' text
-        display.print("BATTERY LOW.NO LOGGER");
+        sprintf_P(strbuffer, PSTR("BATTERY LOW.NO LOGGER"));
+        display.print(strbuffer);
       } else {
         // Display CPM
         if (cpm >= 1000) {
@@ -1105,7 +1112,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       int battery = ((read_voltage(VOLTAGE_PIN)-30));
       if (battery < 1 ) {
         display.setTextColor(BLACK, WHITE); // 'inverted' text
-        display.print("BATTERY LOW.NO LOGGER");
+        sprintf_P(strbuffer, PSTR("BATTERY LOW.NO LOGGER"));
+        display.print(strbuffer);
       } else {
         // Total dose and max count
         sprintf_P(strbuffer, PSTR("Mx="));
@@ -1178,6 +1186,24 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 void gps_program_settings()
 {
 #if ENABLE_MEDIATEK
+
+#ifdef ENABLE_CUSTOM_FN
+  int customfn = digitalRead(CUSTOM_FN_PIN);
+  if (customfn == HIGH) {
+    // Cold start triggered
+    digitalWrite(LOGALARM_LED_PIN, HIGH);
+    memset(line, 0, LINE_SZ);
+    sprintf_P(line, PSTR(PMTK_COLD_START));
+    gpsSerial.println(line);
+  } else {
+#endif
+    memset(line, 0, LINE_SZ);
+    sprintf_P(line, PSTR(PMTK_HOT_START));
+    gpsSerial.println(line);
+#ifdef ENABLE_CUSTOM_FN
+  }
+#endif
+
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
   gpsSerial.println(line);
