@@ -757,7 +757,7 @@ void get_coordinate_string(bool is_latitude, unsigned long val, char *buf)
   unsigned long left = 0;
   unsigned long right = 0;
 
-  left = val/100000.0;
+  left = val/100000;
   right = (val - left*100000)/10;
   if (is_latitude) {
     sprintf_P(buf, PSTR("%04ld.%04ld"), left, right);
