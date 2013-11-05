@@ -1189,7 +1189,7 @@ void gps_program_settings()
 
 #ifdef ENABLE_CUSTOM_FN
   int customfn = digitalRead(CUSTOM_FN_PIN);
-  if (customfn == HIGH) {
+  if (customfn == HIGH || !openlog_ready) {
     // Cold start triggered
     digitalWrite(LOGALARM_LED_PIN, HIGH);
     memset(line, 0, LINE_SZ);
