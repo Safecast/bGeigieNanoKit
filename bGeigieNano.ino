@@ -149,6 +149,8 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_UPDATE_1HZ "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_OUTPUT_ALLDATA "$PMTK314,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
+#define PMTK_HOT_START "$PMTK101*32"
+#define PMTK_COLD_START "$PMTK104*37"
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
 #define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
 
@@ -304,7 +306,6 @@ void setup()
   }
 #endif
 
-
 #if ENABLE_HARDWARE_COUNTER
   // Start the Pulse Counter!
   hwc.start();
@@ -393,6 +394,9 @@ void setup()
    delay(9000);
 
 #endif
+
+  // Clear LED
+  digitalWrite(LOGALARM_LED_PIN, LOW);
 
   //Serial.println(availableMemory());
 
@@ -599,8 +603,6 @@ void loop()
 #endif
   }
 
-
-
 }
 
 // ****************************************************************************
@@ -751,7 +753,7 @@ void get_coordinate_string(bool is_latitude, unsigned long val, char *buf)
   unsigned long left = 0;
   unsigned long right = 0;
 
-  left = val/100000.0;
+  left = val/100000;
   right = (val - left*100000)/10;
   if (is_latitude) {
     sprintf_P(buf, PSTR("%04ld.%04ld"), left, right);
@@ -1056,7 +1058,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       int battery = ((read_voltage(VOLTAGE_PIN)-30));
       if (battery < 1) {
         display.setTextColor(BLACK, WHITE); // 'inverted' text
-        display.print("BATTERY LOW.NO LOGGER");
+        sprintf_P(strbuffer, PSTR("BATTERY LOW.NO LOGGER"));
+        display.print(strbuffer);
       } else {
         // Display CPM
         if (cpm >= 1000) {
@@ -1105,7 +1108,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       int battery = ((read_voltage(VOLTAGE_PIN)-30));
       if (battery < 1 ) {
         display.setTextColor(BLACK, WHITE); // 'inverted' text
-        display.print("BATTERY LOW.NO LOGGER");
+        sprintf_P(strbuffer, PSTR("BATTERY LOW.NO LOGGER"));
+        display.print(strbuffer);
       } else {
         // Total dose and max count
         sprintf_P(strbuffer, PSTR("Mx="));
@@ -1147,8 +1151,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, offset+24); // textsize*8
     display.setTextSize(1);
     display.setTextColor(BLACK, WHITE); // 'inverted' text
-    sprintf_P(strbuffer, PSTR("NO SD CARD"));
+    sprintf_P(strbuffer, PSTR("NO SD CARD/GPS reset"));
     display.print(strbuffer);
+    
+    //reset GPS
+    digitalWrite(LOGALARM_LED_PIN, HIGH);
+    memset(line, 0, LINE_SZ);
+    sprintf_P(line, PSTR(PMTK_COLD_START));
+    gpsSerial.println(line);
   }
 
   // Display battery indicator
@@ -1178,6 +1188,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 void gps_program_settings()
 {
 #if ENABLE_MEDIATEK
+
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
   gpsSerial.println(line);
@@ -1194,6 +1205,7 @@ void gps_program_settings()
   sprintf_P(line, PSTR(DGPS_WAAS_ON));
   gpsSerial.println(line);
 #endif
+
 
 #if ENABLE_SKYTRAQ
   // all GPS command taken from datasheet

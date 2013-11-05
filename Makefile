@@ -288,7 +288,7 @@ endif
 endif
 
 # flags
-CPPFLAGS += -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections
+CPPFLAGS += -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -mcall-prologues 
 CPPFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CPPFLAGS += -mmcu=$(BOARD_BUILD_MCU)
 CPPFLAGS += -DF_CPU=$(BOARD_BUILD_FCPU) -DARDUINO=$(ARDUINOCONST)
@@ -303,6 +303,10 @@ AVRDUDEFLAGS += $(addprefix -C , $(AVRDUDECONF)) -DV
 AVRDUDEFLAGS += -p $(BOARD_BUILD_MCU) -P $(SERIALDEV)
 AVRDUDEFLAGS += -c $(BOARD_UPLOAD_PROTOCOL) -b $(BOARD_UPLOAD_SPEED)
 LINKFLAGS += -Os -Wl,--gc-sections -mmcu=$(BOARD_BUILD_MCU)
+LDFLAGS += -Wl,--relax 
+
+
+
 
 # Display unused code
 #CPPFLAGS += -ffunction-sections -fdata-sections
