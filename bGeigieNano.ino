@@ -1155,7 +1155,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, offset+24); // textsize*8
     display.setTextSize(1);
     display.setTextColor(BLACK, WHITE); // 'inverted' text
-    sprintf_P(strbuffer, PSTR("NO SD CARD/GPS reset"));
+    sprintf_P(strbuffer, PSTR("NO SD CARD/ GPS reset"));
     display.print(strbuffer);
     
     //reset GPS
