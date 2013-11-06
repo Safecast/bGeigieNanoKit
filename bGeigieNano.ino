@@ -287,6 +287,10 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
+#ifdef ENABLE_CUSTOM_FN
+  pinMode(CUSTOM_FN_PIN, INPUT);
+#endif
+
   Serial.begin(14400);
 
 #ifndef ENABLE_SLEEPMODE
@@ -1189,6 +1193,26 @@ void gps_program_settings()
 {
 #if ENABLE_MEDIATEK
 
+<<<<<<< HEAD
+=======
+#ifdef ENABLE_CUSTOM_FN
+  int customfn = digitalRead(CUSTOM_FN_PIN);
+  if (customfn == HIGH || !openlog_ready) {
+    // Cold start triggered
+    digitalWrite(LOGALARM_LED_PIN, HIGH);
+    memset(line, 0, LINE_SZ);
+    sprintf_P(line, PSTR(PMTK_COLD_START));
+    gpsSerial.println(line);
+  } else {
+#endif
+    memset(line, 0, LINE_SZ);
+    sprintf_P(line, PSTR(PMTK_HOT_START));
+    gpsSerial.println(line);
+#ifdef ENABLE_CUSTOM_FN
+  }
+#endif
+
+>>>>>>> b70d0b6691ce2362c9bc16b51a569445b67dd952
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
   gpsSerial.println(line);
