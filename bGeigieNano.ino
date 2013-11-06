@@ -1159,7 +1159,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.print(strbuffer);
     
     //reset GPS
-    digitalWrite(LOGALARM_LED_PIN, HIGH);
+    digitalWrite(LOGALARM_LED_PIN, LOW);
     memset(line, 0, LINE_SZ);
     sprintf_P(line, PSTR(PMTK_COLD_START));
     gpsSerial.println(line);
