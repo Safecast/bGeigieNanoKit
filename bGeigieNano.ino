@@ -1193,8 +1193,6 @@ void gps_program_settings()
 {
 #if ENABLE_MEDIATEK
 
-<<<<<<< HEAD
-=======
 #ifdef ENABLE_CUSTOM_FN
   int customfn = digitalRead(CUSTOM_FN_PIN);
   if (customfn == HIGH || !openlog_ready) {
@@ -1212,7 +1210,6 @@ void gps_program_settings()
   }
 #endif
 
->>>>>>> b70d0b6691ce2362c9bc16b51a569445b67dd952
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
   gpsSerial.println(line);
