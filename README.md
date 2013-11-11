@@ -8,6 +8,30 @@ This work would not exist without the original development by [bidouilles] (http
 
 # Requirements
 * bGeigieNanoKit can be bought online from [Mecom](http://www.nanoxpress.com/)
+* for programing/updating software you need a FTDI cable drivers are at http://www.ftdichip.com/Drivers/VCP.htm
+* solder iron
+* time to make the kit (3-4 hours is normal)
+
+
+# Build process 
+(Needs compiler for example Crosspack-AVR on Mac)
+http://www.ladyada.net/learn/avr/setup-mac.html
+
+## Using the Makefile
+    export ARDUINODIR=/home/geigie/arduino-1.0.1/
+    export SERIALDEV=/dev/ttyUSB0
+    export BOARD=fio
+    cp -r libraries /home/geigie/arduino-1.0.1/
+    make
+    make upload
+
+## Using the prebuilt image
+You can use directly the prebuilt image to flash the Arduino Fio. Here is an example with Arduino Fio connected to ttyUSB0:
+
+    /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
+    
+Or Windows Users can download a small program called Xloader and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
+http://russemotto.com/xloader/
 
 # Assembly
 
@@ -31,25 +55,6 @@ the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 3
 | 1300 | 1d 12:06 |
 | 2600 |  3d 00:13 |
 | 6600 |  7d 15:19 |
-
-# Build process 
-(Needs compiler for example Crosspack-AVR on Mac)
-http://www.ladyada.net/learn/avr/setup-mac.html
-
-## Using the Makefile
-    export ARDUINODIR=/home/geigie/arduino-1.0.1/
-    export SERIALDEV=/dev/ttyUSB0
-    export BOARD=fio
-    cp -r libraries /home/geigie/arduino-1.0.1/
-    make
-    make upload
-
-## Using the prebuilt image
-You can use directly the prebuilt image to flash the Arduino Fio. Here is an example with Arduino Fio connected to ttyUSB0:
-
-    /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
-    
-Or Windows Users can download a small program called Xloader and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
 
 # Usage
 Once powered on the bGeigieNano will initiliaze a new log file on the SD card, setup the GPS and start counting the CPM.
