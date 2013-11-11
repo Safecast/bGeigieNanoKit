@@ -1,4 +1,4 @@
-# Welcome to bGeigie Nano Kit project
+# Welcome to bGeigie Nano Kit project (this readme file is in process of updating)
 
 This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1010.
 
@@ -6,35 +6,11 @@ This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican
 This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
 
 # Requirements
-* [Arduino Fio][3]
-* [OpenLog][1]
-* Adafruit [Ultimate GPS][7]
-* [LND-7317][4] geiger pancake with Medcom iRover HV board
-* [Monochrome 128x32][2] OLED screen
-* 3.7V 1300mAh Lithium battery
-* [Pelican 1010][9] micro-case
+* bGeigieNanoKit can be bought online from [Mecom](http://www.nanoxpress.com/)
 
 # Assembly
 
-![bGeigieNano](https://raw.github.com/bidouilles/bGeigieNano/bGeigieNanoKit/assembly/bGeigieNanoKit_bb_600.jpg)
-
 ## Pins assignment
-
-| Arduino Fio pin | Target pin |
-| :-----------: | :-----------: |
-| VCC | VCC or Vin pin of the GPS, OpenLog, OLED and iRover (3.3v)|
-| GND | GND pin of the GPS, OpenLog, OLED and iRover |
-| D2 | pulse pin from the iRover |
-| D3 | OLED RST pin |
-| D4 | OLED CS pin |
-| D5 | OLED DC pin |
-| D6 | OLED Data pin |
-| D7 | OLED Clk pin |
-| D8 | TX pin of the GPS |
-| D9 | RX pin of the GPS |
-| D10 | TX pin of the OpenLog |
-| D11 | RX pin of the OpenLog |
-| D12 | GRN pin of the OpenLog |
 
 # Power consumption
 
@@ -55,7 +31,8 @@ the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 3
 | 2600 |  3d 00:13 |
 | 6600 |  7d 15:19 |
 
-# Build process
+# Build process (Needs compiler for example Crosspack-AVR on Mac)
+
 ## Using the Makefile
     export ARDUINODIR=/home/geigie/arduino-1.0.1/
     export SERIALDEV=/dev/ttyUSB0
@@ -68,6 +45,8 @@ the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 3
 You can use directly the prebuilt image to flash the Arduino Fio. Here is an example with Arduino Fio connected to ttyUSB0:
 
     /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
+    
+Or Windows Users can download a small program called Xloader and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
 
 # Usage
 Once powered on the bGeigieNano will initiliaze a new log file on the SD card, setup the GPS and start counting the CPM.
