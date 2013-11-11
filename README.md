@@ -34,6 +34,7 @@ the total log duration if using a battery of 1300mAh will be (1300/.01)/3600 = 3
 
 # Build process 
 (Needs compiler for example Crosspack-AVR on Mac)
+http://www.ladyada.net/learn/avr/setup-mac.html
 
 ## Using the Makefile
     export ARDUINODIR=/home/geigie/arduino-1.0.1/
