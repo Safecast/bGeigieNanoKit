@@ -30,8 +30,8 @@ You can use directly the prebuilt image to flash the Arduino Fio. Here is an exa
 
     /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
     
-Or Windows Users can download a small program called Xloader and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
-http://russemotto.com/xloader/
+Or Windows Users can download a small program called Xloader (http://russemotto.com/xloader/) and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
+
 
 # Assembly
 
