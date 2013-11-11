@@ -1,4 +1,5 @@
-# Welcome to bGeigie Nano Kit project (this readme file is in process of updating)
+# Welcome to bGeigie Nano Kit project  
+(this file in in process of updating)
 
 This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1010.
 
