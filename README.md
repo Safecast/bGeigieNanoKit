@@ -31,7 +31,14 @@ You can use directly the prebuilt image to flash the Arduino Fio. Here is an exa
     /usr/bin/avrdude -DV -p atmega328p -P /dev/ttyUSB0 -c arduino -b 57600 -U flash:w:bGeigieNano.hex:i
     
 Or Windows Users can download a small program called Xloader (http://russemotto.com/xloader/) and can directly flash a HEX file to the bGiegieNano (assuming you have a FDTI connection. Can be bought at many places like Adafruit, Seeedstudio, Switch-science etc.
-
+Download and installed X-loader. Do not use the USB charging port on the Nano, but the 6 pin FTDI connector on the edge of the CPU board.
+Purchase a   https://www.sparkfun.com/products/9873      FTDI breakout adapter.
+ 
+When you plug this little FTDI breakout board onto the 6 pin header and then plug in via a usb cable into your computer, the Nano will power up by itself (even though the power switch is off).  Be careful here as you can plug it in upside down, so match the pins on the FTDI board with the pins on the cpu module.
+ 
+Monitor the device manager com ports to see the device appear and what com # Windows assigned to the device.
+ 
+Then Run X-loader, select com port, browse to HEX file, and I selected in the drop down Duemilanove/nano(ATmega328) device.  Leave the baud rate at 57600 and hit upload.   When it is done, the Nano rebooted/restarted all by itself and is running the new code.     Remove the FTDI board and usb cable to computer, and the Nano will power off. 
 
 # Assembly
 
