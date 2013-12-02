@@ -70,14 +70,20 @@ unsigned long int gps_distance = 0;
 #endif
 
 // Geiger settings ------------------------------------------------------------
-#define TIME_INTERVAL 5000	
 #define LINE_SZ 100
 #define BUFFER_SZ 12
 #define STRBUFFER_SZ 32
-#define NX 12
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
+
+#if ENABLE_CUSTOM_FN 
+	#define NX 60
+	#define TIME_INTERVAL 1000
+#else
+	#define NX 12
+	#define TIME_INTERVAL 5000
+#endif
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
@@ -410,13 +416,9 @@ void loop()
   // Check geigie mode switch
   if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
     config.type = GEIGIE_TYPE_B; // XGeigie;
-    //prepare for 1 second updates
-   // interruptCounterSetup(INTERRUPT_COUNTER_PIN, 5000);
   } else {
     config.type = GEIGIE_TYPE_X; // BGeigie
     digitalWrite(LOGALARM_LED_PIN, LOW);
-	//prepare for 1 second updates
-    //interruptCounterSetup(INTERRUPT_COUNTER_PIN, 1000);
   }
 #endif
 
@@ -717,13 +719,12 @@ unsigned long cpm_gen()
 
    // sum up
    for (i=0 ; i < NX ; i++)
-     c_p_m += shift_reg[i];
+   c_p_m += shift_reg[i];
 
 #ifdef ENABLE_LND_DEADTIME
-   // deadtime compensation (medcom international)
+   //	 deadtime compensation (medcom international)
    c_p_m = (unsigned long)((float)c_p_m/(1-(((float)c_p_m*1.8833e-6))));
 #endif
-
    return c_p_m;
 }
 
@@ -766,6 +767,75 @@ float get_wgs84_coordinate(unsigned long val)
   result = val/10000000.0;
   result = ((result-(int)result)/60.0)*100 + (int)result;
   return (float)result;
+}
+
+/* render measurement in big digit on display */
+void render_measurement(int value, bool is_cpm, int offset)
+{
+  display.setCursor(0, offset);
+  display.setTextSize(2);
+  if (VOID == geiger_status) {
+    display.setTextColor(BLACK, WHITE); // 'inverted' text
+  } else {
+    display.setTextColor(WHITE);
+  }
+
+  // Cleanup temp buffer
+  memset(strbuffer1, 0, sizeof(strbuffer1));
+
+  // display in CPM
+  if (is_cpm) {
+    if (value >= 10000) {
+      dtostrf((float)value/1000.0, 4, 1, strbuffer);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR("kCPM"));
+      display.print(strbuffer);
+    } else if(value >= 1000) {
+      dtostrf((float)(value/1000.0), 4, 3, strbuffer);
+      strncpy (strbuffer1, strbuffer, 4);
+      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+        strbuffer1[strlen(strbuffer1)-1] = 0;
+      }
+      display.print(strbuffer1);
+      sprintf_P(strbuffer, PSTR("kCPM"));
+      display.print(strbuffer);
+    } else {
+      dtostrf((float)value, 0, 0, strbuffer);
+      display.print(strbuffer);
+      sprintf_P(strbuffer, PSTR(" CPM"));
+      display.print(strbuffer);
+    }
+  } else {
+    // display in Sievert/h
+    if ((value/config.cpm_factor) >= 1000) {
+      dtostrf((float)(value/config.cpm_factor/1000.0), 4, 2, strbuffer);
+      strncpy (strbuffer1, strbuffer, 5);
+      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+        strbuffer1[strlen(strbuffer1)-1] = 0;
+      }
+      display.print(strbuffer1);
+      sprintf_P(strbuffer, PSTR(" mS/h"));
+      display.print(strbuffer);
+    } else if ((value/config.cpm_factor) >= 10) {
+      dtostrf((float)(value/config.cpm_factor/1.0), 4, 2, strbuffer);
+      strncpy (strbuffer1, strbuffer, 5);
+      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+        strbuffer1[strlen(strbuffer1)-1] = 0;
+      }
+      display.print(strbuffer1);
+      sprintf_P(strbuffer, PSTR(" uS/h"));
+      display.print(strbuffer);
+    } else {
+      dtostrf((float)(value/config.cpm_factor/1.0), 4, 3, strbuffer);
+      strncpy (strbuffer1, strbuffer, 6);
+      if (strbuffer1[strlen(strbuffer1)-1] == '.') {
+        strbuffer1[strlen(strbuffer1)-1] = 0;
+      }
+      display.print(strbuffer1);
+      sprintf_P(strbuffer, PSTR(" uS/h"));
+      display.print(strbuffer);
+    }
+  }
 }
 
 /* generate log result line */
@@ -910,38 +980,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
           }
     #endif
 
-
     // Display CPM (with deadtime compensation)
-    display.setCursor(0, offset);
-    display.setTextSize(2);
-    if (VOID == geiger_status) {
-      display.setTextColor(BLACK, WHITE); // 'inverted' text
-    } else {
-      display.setTextColor(WHITE);
-    }
+    render_measurement(cpm, true, offset);
     
-    if (cpm > 10000) {
-    	  dtostrf((float)cpm, 0, 0, strbuffer);
-		  display.print(strbuffer);
-		  sprintf_P(strbuffer, PSTR("10kCPM"));
-		  display.print(strbuffer);
-    } else if(cpm > 1000) {
-		  dtostrf((float)(cpm/1000.00), 4, 3, strbuffer);
-		  strncpy (strbuffer1, strbuffer, 4);
-		  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-		  strbuffer1[strlen(strbuffer1)-1] = 0;
-		  } 
-		  display.print(strbuffer1);
-		  sprintf_P(strbuffer, PSTR("kCPM"));
-		  display.print(strbuffer);
-	} else{
-	  dtostrf((float)cpm, 0, 0, strbuffer);
-	  display.print(strbuffer);
-	  sprintf_P(strbuffer, PSTR(" CPM"));
-	  display.print(strbuffer);
-	}
-
-
     // Display SD, GPS and Geiger states
     display.setTextColor(WHITE);
     display.setTextSize(1);
@@ -1008,35 +1049,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     	}
     	
     // Display uSv/h
-    if (VOID == geiger_status) {
-      display.setTextColor(BLACK, WHITE); // 'inverted' text
-    } else {
-      display.setTextColor(WHITE);
-    }
-    display.setTextSize(2);
-    display.setCursor(0, offset); // textsize*8
-    
-    
-    if ((cpm/config.cpm_factor) >1000) {
-    dtostrf((float)(cpm/config.cpm_factor/1000.00), 4, 2, strbuffer);
-    
-    strncpy (strbuffer1, strbuffer, 5);
-	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-		  strbuffer1[strlen(strbuffer1)-1] = 0;
-		  }
-    display.print(strbuffer1);
-    sprintf_P(strbuffer, PSTR(" mS/h"));
-    display.print(strbuffer);
-} else {
-    dtostrf((float)(cpm/config.cpm_factor/1.000), 4, 3, strbuffer);
-    strncpy (strbuffer1, strbuffer, 6);
-	  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
-		  strbuffer1[strlen(strbuffer1)-1] = 0;
-		  }
-    display.print(strbuffer1);
-    sprintf_P(strbuffer, PSTR(" uS/h"));
-    display.print(strbuffer);
-    }
+    render_measurement(cpm, false, offset);
+	
+    // Cleanup temp buffer
+    memset(strbuffer1, 0, sizeof(strbuffer1));
 
     display.setCursor(0, offset+16);
     display.setTextSize(1);
@@ -1158,8 +1174,6 @@ display.fillRect(118, offset+26, battery, 3, WHITE);
   display.drawRect(116, offset+0, 12, 7, WHITE);
 display.fillRect(118, offset+2, battery, 3, WHITE);
 }
-
-  
   display.display();
 #endif
 
@@ -1243,16 +1257,6 @@ float read_voltage(int pin)
   
   
   return result;
-}
-
-/* get available memory */
-int availableMemory()
-{
-  int size = 1024;
-  byte *buf;
-  while ((buf = (byte *) malloc(--size)) == NULL);
-  free(buf);
-  return size;
 }
 
 #if ENABLE_100M_TRUNCATION
