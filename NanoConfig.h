@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        0000
-#define NANO_VERSION       "1.3.2"
+#define NANO_VERSION       "1.3.4"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -29,7 +29,7 @@
 #define ENABLE_MEDIATEK          1
 #define ENABLE_SKYTRAQ           0
 #define ENABLE_EEPROM_DOSE       1
-#define ENABLE_CUSTOM_FN         0 // enable custom function button
+#define ENABLE_CUSTOM_FN         1 // enable custom function button
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
@@ -58,6 +58,7 @@
   #define OPENLOG_TX_PIN 5
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
+  #define CUSTOM_FN_PIN 3
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
