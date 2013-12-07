@@ -76,14 +76,9 @@ unsigned long int gps_distance = 0;
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
 #define VOID      'V'  // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
+#define NX 12
+#define TIME_INTERVAL 5000
 
-#if ENABLE_CUSTOM_FN 
-	#define NX 60
-	#define TIME_INTERVAL 1000
-#else
-	#define NX 12
-	#define TIME_INTERVAL 5000
-#endif
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
@@ -290,7 +285,7 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
-  Serial.begin(14400);
+  Serial.begin(9600);
 
 #ifndef ENABLE_SLEEPMODE
   // enable and reset the watchdog timer
@@ -770,7 +765,7 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
-void render_measurement(int value, bool is_cpm, int offset)
+void render_measurement(unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, offset);
   display.setTextSize(2);
@@ -785,12 +780,7 @@ void render_measurement(int value, bool is_cpm, int offset)
 
   // display in CPM
   if (is_cpm) {
-    if (value >= 10000) {
-      dtostrf((float)value/1000.0, 4, 1, strbuffer);
-      display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR("kCPM"));
-      display.print(strbuffer);
-    } else if(value >= 1000) {
+    if(value >= 10000) {
       dtostrf((float)(value/1000.0), 4, 3, strbuffer);
       strncpy (strbuffer1, strbuffer, 4);
       if (strbuffer1[strlen(strbuffer1)-1] == '.') {
@@ -837,7 +827,6 @@ void render_measurement(int value, bool is_cpm, int offset)
     }
   }
 }
-
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
