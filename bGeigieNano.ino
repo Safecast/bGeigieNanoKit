@@ -876,7 +876,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
-  sprintf_P(buf, PSTR("$%s,%04d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%d,%ld"),  \
+  sprintf_P(buf, PSTR("$%s,%04d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%ld,"),  \
               NANO_HEADER, \
               config.device_id, \
               year, month, day,  \
@@ -889,7 +889,6 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
               lon, WE,\
               strbuffer, \
               gps_status, \
-              nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat, \
               precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
 
   len = strlen(buf);
