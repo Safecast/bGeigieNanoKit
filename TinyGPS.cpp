@@ -187,6 +187,21 @@ bool TinyGPS::term_complete()
     byte checksum = 16 * from_hex(_term[0]) + from_hex(_term[1]);
     if (checksum == _parity)
     {
+      // Handle MTK3339 RTC clock (even with no GPS fix)
+      switch(_sentence_type)
+      {
+      case _GPS_SENTENCE_GPRMC:
+        _time      = _new_time;
+        _date      = _new_date;
+        _date_good = true;
+        _last_time_fix = _new_time_fix;
+        break;
+      case _GPS_SENTENCE_GPGGA:
+        _time      = _new_time;
+        if (_date_good)
+          _last_time_fix = _new_time_fix;
+        break;
+      }
       if (_gps_data_good)
       {
 #ifndef _GPS_NO_STATS
@@ -210,23 +225,8 @@ bool TinyGPS::term_complete()
           _hdop      = _new_hdop;
           break;
         }
+        return true;
       }
-      // Handle MTK3339 RTC clock (even with no GPS fix)
-      switch(_sentence_type)
-      {
-      case _GPS_SENTENCE_GPRMC:
-        _time      = _new_time;
-        _date      = _new_date;
-        _date_good = true;
-        _last_time_fix = _new_time_fix;
-        break;
-      case _GPS_SENTENCE_GPGGA:
-        _time      = _new_time;
-        if (_date_good)
-          _last_time_fix = _new_time_fix;
-        break;
-      }
-      return true;
     }
 
 #ifndef _GPS_NO_STATS
