@@ -140,6 +140,7 @@ SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN);
 #endif
 
 // Gps data buffers
+#define GPS_NAME_SZ 40
 static char lat[BUFFER_SZ];
 static char lon[BUFFER_SZ];
 
@@ -149,8 +150,9 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_HOT_START "$PMTK101*32"
 #define PMTK_COLD_START "$PMTK104*37"
-#define SBAS_ENABLE "$PMTK313,1*2E\r\n"
-#define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
+#define PMTK_SBAS_ENABLE "$PMTK313,1*2E"
+#define PMTK_DGPS_WAAS_ON "$PMTK301,2*2E"
+#define PMTK_Q_RELEASE "$PMTK605*31"
 
 #if ENABLE_STATIC_GPS
 #include <avr/pgmspace.h>
@@ -561,6 +563,17 @@ void loop()
 #endif
            OpenLog.print(strbuffer);
 
+           char gps_name[GPS_NAME_SZ];
+           memset(gps_name, 0, GPS_NAME_SZ);
+           gpsSerial.listen();
+           gps_query_release(gps_name, GPS_NAME_SZ);
+           OpenLog.listen();
+           if (strlen(gps_name) > 0 ) {
+             sprintf_P(strbuffer, PSTR("# gps=%s" NEW_LINE), gps_name);
+             OpenLog.print(strbuffer);
+           }
+
+           gpsSerial.listen(); // switch back from createFile()
 #endif // ENABLE_OPENLOG
          }
       }
@@ -578,7 +591,7 @@ void loop()
       if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
 #ifdef LOGALARM_LED_PIN
         //digitalWrite(LOGALARM_LED_PIN, HIGH);
-#endif
+#endif // LOGALARM_LED_PIN
         // Put OpenLog serial in listen mode
         OpenLog.listen();
         OpenLog.println(line);
@@ -587,12 +600,14 @@ void loop()
         dtostrf(read_voltage(VOLTAGE_PIN), 0, 1, strbuffer);
         OpenLog.print("$DIAG,");
         OpenLog.println(strbuffer);
-#endif
+#endif // ENABLE_DIAGNOSTIC
+
+        gpsSerial.listen();
       }
 #ifdef LOGALARM_LED_PIN
       //digitalWrite(LOGALARM_LED_PIN, LOW);
-#endif
-#endif
+#endif // LOGALARM_LED_PIN
+#endif // ENABLE_OPENLOG
   }
 
 
@@ -1172,25 +1187,61 @@ display.fillRect(118, offset+2, battery, 3, WHITE);
   return (gps_status == AVAILABLE);
 }
 
+char* gpsExpect(const char *prefix) {
+  int i = 0;
+  while (gpsSerial.isListening()){
+    char c = gpsSerial.read();
+    if (c == -1) {
+      delay(10);
+      continue;
+    }
+#ifdef ENABLE_GPS_NMEA_LOG
+    Serial.print(c);
+#endif // ENABLE_GPS_NMEA_LOG
+    if (c == '$') {
+      i = 0;
+    }
+    if ( i < LINE_SZ ) {
+      line[i] = c;
+      i++;
+    } else {
+      Serial.println("overflow in gpsExpect");
+      return NULL;
+    }
+    if (c == '\n') {
+      if (strncmp(line, prefix, strlen(prefix)) == 0) {
+        line[++i] = '\0';
+        return line;
+      }
+    }
+  }
+  return NULL;
+}
+
 /* setup the GPS module to 1Hz and RMC+GGA messages only */
 void gps_program_settings()
 {
 #if ENABLE_MEDIATEK
-  memset(line, 0, LINE_SZ);
+  char expect[16];
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
   gpsSerial.println(line);
+  sprintf_P(expect, PSTR("$PMTK001,"));
+  gpsExpect(expect);
 
-  memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_UPDATE_1HZ));
   gpsSerial.println(line);
+  sprintf_P(expect, PSTR("$PMTK001,"));
+  gpsExpect(expect);
 
-  memset(line, 0, LINE_SZ);
-  sprintf_P(line, PSTR(SBAS_ENABLE));
+  sprintf_P(line, PSTR(PMTK_SBAS_ENABLE));
   gpsSerial.println(line);
+  sprintf_P(expect, PSTR("$PMTK001,"));
+  gpsExpect(expect);
 
-  memset(line, 0, LINE_SZ);
-  sprintf_P(line, PSTR(DGPS_WAAS_ON));
+  sprintf_P(line, PSTR(PMTK_DGPS_WAAS_ON));
   gpsSerial.println(line);
+  sprintf_P(expect, PSTR("$PMTK001,"));
+  gpsExpect(expect);
 #endif
 
 #if ENABLE_SKYTRAQ
@@ -1236,6 +1287,28 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
   gpsSerial.write(0x0D);
   gpsSerial.write(0x0A);
   gpsSerial.write('\n');
+}
+
+void gps_query_release(char *buf, size_t bufsize){
+#if ENABLE_MEDIATEK
+  char expect[10];
+  sprintf_P(line, PSTR(PMTK_Q_RELEASE));
+  gpsSerial.println(line);
+  sprintf_P(expect, PSTR("$PMTK705,"));
+  if (gpsExpect(expect) != NULL ) {
+    // 9 == strlen("$PMTK705,")
+    for (int i=9; i<strlen(line); i++ ) { // search for checksum
+      if (line[i] == '*') {
+        size_t sz = i-9;
+        if (sz > bufsize-1) {
+          sz = bufsize-1;
+        }
+        strncpy(buf, line+9, sz);
+        buf[sz] = '\0';
+      }
+    }
+  }
+#endif // ENABLE_MEDIATEK
 }
 
 /* retrieve battery voltage */
