@@ -210,8 +210,6 @@ bool TinyGPS::term_complete()
           _hdop      = _new_hdop;
           break;
         }
-
-        return true;
       }
       // Handle MTK3339 RTC clock (even with no GPS fix)
       switch(_sentence_type)
@@ -228,6 +226,7 @@ bool TinyGPS::term_complete()
           _last_time_fix = _new_time_fix;
         break;
       }
+      return true;
     }
 
 #ifndef _GPS_NO_STATS
