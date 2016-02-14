@@ -1,0 +1,131 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf360
+{\fonttbl\f0\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;}
+\paperw12240\paperh15840\margl1440\margr1440\vieww9000\viewh9000\viewkind0
+\pard\tx1440\tx2880\tx4320\tx5760\tx7200\ql\qnatural
+
+\f0\fs36 \cf0 FTDIUSBSerialDriver ReadMe\
+
+\fs24 \
+FTDIUSBSerialDriver is an implementation of a serial driver for FTDI USB devices on Mac OS X.  It supports FT8U232AM, FT8U245AM, FT232BM, FT245BM, FT2232, FT232R, FT245R, FT2232H, FT4232H, FT232H and FT X Series devices.\
+\
+
+\fs28 Revision History\
+\
+
+\fs24 v2.2.17	(24th February 2012)\
+	Corrected issue with custom port names.\
+	Release for Lion.\
+\
+v2.2.16	(28th February 2011)\
+	Added support for FT232H.\
+	Force FT232R/FT245R endpoint size to 64 bytes.\
+\
+v2.2.15	(3rd February 2011)\
+	Corrected baud rate requests using sub-integer divisors.\
+\
+v2.2.14	(25th August 2009)\
+	Release for Snow Leopard.\
+\
+v2.2.13	(25th August 2009)\
+	HiddenPort property now set as standard.\
+\
+v2.2.12	(7th July 2009)\
+	Includes x86_64 support.\
+\
+v2.2.11	(17th April 2009)\
+	Removed user notification dialog box.\
+\
+v2.2.10	(6th August 2008)\
+	Added support for FT2232H and FT4232H.\
+\
+v2.2.9	(8th January 2008)\
+	Added option to select serial port base name.\
+\
+v2.2.8	(9th November 2007)\
+	Fixed open() problem with FT8U232AM.\
+\
+v2.2.7	(22nd August 2006)\
+	Fixed send break problem.\
+\
+v2.2.6	(21st July 2006)\
+	Fixed flow control problem.\
+	Fixed close port problem after stall.\
+\
+v2.2.1	(14th April 2006)\
+	Universal binary.\
+\
+v2.1.1	(14th April 2006)\
+	Fixed problem with modem status.\
+\
+v2.1.0	(19th December 2005)\
+	Added option to alias all standard baud rates to same value.\
+\
+v2.0.1	(24th August 2005)\
+	Fix intermittent problem with receive data.\
+\
+v2.0.0	(15th August 2005)\
+	Full release; new driver design.\
+\
+v2.0.0b18	(9th August 2005)\
+	Beta release; new driver design.\
+\
+v1.1.2	(19th July 2005)\
+	Fixed panic that could occur on opening device.\
+\
+v1.1.0	(30th June 2005)\
+	Supports FT2232C.\
+\
+v1.0.10	(17th June 2005)\
+	Fixed disconnect problem on 10.4.\
+\
+v1.0.9	(18th December 2003)\
+	Fixed problem where B50 and B75 could not be selected.\
+\
+v1.0.8	(18th August 2003)\
+	Supports non-standard baud rates.\
+\
+v1.0.7	(16th June 2003)\
+	Fixed modem control line problem.\
+	Fixed send break problem.\
+\
+v1.0.6	(7th March 2003)\
+	Supports higher baud rates.\
+\
+v1.0.5	(13th January 2003)\
+	Purge FIFOs on acquire port.\
+\
+v1.0.4	(17th December 2002)\
+	Fixed CTS change state.\
+\
+v1.0.3	(9th December 2002)\
+	Fixed flow control.\
+\
+v1.0.2	(6th December 2002)\
+	Fixed USB surprise removal problem.\
+	Fixed support for RTS/CTS flow control.\
+\
+v1.0.0	(5th November 2002)\
+	Full release.\
+	Supports re-enumeration during reboot.\
+\
+v1.0.0b6	(3rd November 2002)\
+	Supports multiple device IDs.\
+	Fixed device naming problem.\
+\
+v1.0.0b4	(12th September 2002)\
+	Packaged for distribution and installation.\
+\
+\
+
+\fs28 Contact Us\
+\
+
+\fs24 For more information, visit the FTDI web site at : http://www.ftdichip.com\
+\
+\
+\
+\
+\
+	\
+}
