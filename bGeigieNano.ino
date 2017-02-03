@@ -30,37 +30,48 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#if defined(ARDUINO)
+SYSTEM_MODE(MANUAL);//do not connect to cloud
+#else
+SYSTEM_MODE(AUTOMATIC);//connect to cloud
+#endif
+
+#include "Adafruit_GPS.h"
+#include "application.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1306.h"
+#include "Adafruit_Sensor.h"
+#include "Adafruit_LSM303.h"
+
+
+
 #include <limits.h>
-#include <SoftwareSerial.h>
 #include <math.h>
 #include <stdlib.h>
-#include <avr/wdt.h>
-#include <EEPROM.h>
 #include "TinyGPS.h"
 
 #include "NanoSetup.h"
 #include "NanoConfig.h"
 #include "NanoDebug.h"
 
+#include "InterruptCounter.h"
+
+// For some reason (ask Musti) ARDUINO
+// must be undef before loading SdFat library
+// (2017 01 22 Robin: test works without these two lines. commenting out)
+// #undef ARDUINO
+// #define PLATFORM_ID 3
+#include "SdFat.h"
+
+
 // OLED settings --------------------------------------------------------------
 #if ENABLE_SSD1306
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 
-#ifdef OLED_SPI_MODE
-Adafruit_SSD1306 display(OLED_DATA, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
-#else
+#define OLED_RESET 7 // LCD_RST = D7
 Adafruit_SSD1306 display(OLED_RESET);
-#endif
 
 #if (SSD1306_LCDHEIGHT != 32)
 #error("Height incorrect, please change Adafruit_SSD1306.h!");
-#endif
-
-
-#if (_SS_MAX_RX_BUFF < 128)
-#error("Serial RX buffer to small, please change in SoftwareSerial.h!");
 #endif
 
 // For distance computation
@@ -103,24 +114,8 @@ static char strbuffer[STRBUFFER_SZ];
 static char strbuffer1[STRBUFFER_SZ];
 
 // Pulse counter --------------------------------------------------------------
-#if ENABLE_HARDWARE_COUNTER
-// Hardware counter
-#include "HardwareCounter.h"
-HardwareCounter hwc(HARDWARE_COUNTER_TIMER1, TIME_INTERVAL);
-#else
-// Interrupt counter
-#include "InterruptCounter.h"
-#endif
 
-#if ENABLE_HARDWARE_COUNTER
-#if ENABLE_SLEEPMODE
-#define IS_READY (1)
-#else
-#define IS_READY (hwc.available())
-#endif
-#else
 #define IS_READY (interruptCounterAvailable())
-#endif
 
 // OpenLog settings -----------------------------------------------------------
 #if ENABLE_OPENLOG
@@ -130,14 +125,13 @@ static const int resetOpenLog = OPENLOG_RST_PIN;
 #endif
 bool openlog_ready = false;
 
+// SD FAT object
+SdFat sd(1);
+
 // Gps settings ------------------------------------------------------------
 TinyGPS gps(true);
 #define GPS_INTERVAL 1000
 char gps_status = VOID;
-
-#if ENABLE_SOFTGPS
-SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN);
-#endif
 
 // Gps data buffers
 static char lat[BUFFER_SZ];
@@ -152,8 +146,6 @@ static char lon[BUFFER_SZ];
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
 #define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
 
-#if ENABLE_STATIC_GPS
-#include <avr/pgmspace.h>
 // GPS test sentences
 char strGPRMC[] PROGMEM = "$GPRMC,201547.000,A,3014.5527,N,09749.5808,W,0.24,163.05,040109,,*1A";
 char strGPGGA[] PROGMEM = "$GPGGA,201548.000,3014.5529,N,09749.5808,W,1,07,1.5,225.6,M,-22.5,M,18.8,0000*78";
@@ -178,11 +170,13 @@ static unsigned long cpm_gen();
 static bool gps_gen_filename(TinyGPS &gps, char *buf);
 static bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb);
 static char checksum(char *s, int N);
+
 #if ENABLE_OPENLOG
 static void setupOpenLog();
 static bool loadConfig(char *fileName);
 static void createFile(char *fileName);
 #endif
+
 static void gps_program_settings();
 static float read_voltage(int pin);
 static int availableMemory();
@@ -192,78 +186,6 @@ static void truncate_100m(char *latitude, char *longitude);
 #endif
 
 // Sleep mode -----------------------------------------------------------------
-#if ENABLE_SLEEPMODE
-#include <avr/sleep.h>
-#include <avr/power.h>
-
-volatile int f_wdt=1;
-
-ISR(WDT_vect)
-{
-  if(f_wdt == 0)
-  {
-    f_wdt=1;
-  }
-  else
-  {
-  }
-}
-
-void enableSleepTimer(void)
-{
-  cli();
-  wdt_reset();
-
-  // Setup WDT
-  // Clear the reset flag
-  MCUSR &= ~(1<<WDRF);
-
-  // Set WDCE (4 clock cycles updates)
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
-
-  // Set new watchdog timeout prescaler value
-  WDTCSR = 1<<WDP3; // 4.0 seconds
-
-  // Enable the WD interrupt
-  WDTCSR |= _BV(WDIE);
-
-  sei();
-}
-
-void disableSleepTimer(void)
-{
-  cli();
-  wdt_reset();
-
-  // Setup WDT
-  // Clear the reset flag
-  MCUSR &= ~(1<<WDRF);
-
-  // Keep old prescaler setting to prevent unintentional time-out
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
-
-  // Disable the WD interrupt
-  WDTCSR |= 0x00;
-
-  sei();
-}
-
-void enterSleep(void)
-{
-  power_all_disable();
-  set_sleep_mode(SLEEP_MODE_STANDBY); // keep oscillator active
-
-  // Enable and enter sleep mode
-  sleep_enable();
-  sleep_mode();
-
-  // The program will continue from here after the WDT timeout
-
-  // Disable sleep and re-enable the peripherals
-  sleep_disable();
-  power_all_enable();
-}
-#endif
 
 // Nano Settings --------------------------------------------------------------
 static ConfigType config;
@@ -304,39 +226,37 @@ void setup()
   }
 #endif
 
+  // Initialize SdFat or print a detailed error message and halt
+  // Use half speed like the native library.
+  // Change to SPI_FULL_SPEED for more performance.
+  if (!sd.begin(chipSelect, SPI_HALF_SPEED)) {
+    sd.initErrorHalt();
+  }
 
-#if ENABLE_HARDWARE_COUNTER
-  // Start the Pulse Counter!
-  hwc.start();
-#else
+  nanoSetup.loadFromFile("SAFECAST.TXT");
+
   // Create pulse counter
-  interruptCounterSetup(INTERRUPT_COUNTER_PIN, TIME_INTERVAL);
+  interruptCounterSetup(IROVER, TIME_INTERVAL);
 
   // And now Start the Pulse Counter!
   interruptCounterReset();
-#endif
 
-#if ENABLE_SOFTGPS
-  gpsSerial.begin(9600);
+
+  // The GPS is connected to Serial2
+  Serial2.begin(9600);
 
   // Put GPS serial in listen mode
-  gpsSerial.listen();
+  Serial2.listen();
 
   // initialize and program the GPS module
   gps_program_settings();
-#endif
 
 
-#if ENABLE_EEPROM_DOSE
+  // Read the dose from EEPROM
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
-#endif
 
   // setup analog reference to read battery and boost voltage
   analogReference(INTERNAL);
-
-#if ENABLE_SLEEPMODE
-  enableSleepTimer();
-#endif
 
 #if ENABLE_SSD1306
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -426,80 +346,37 @@ void loop()
   }
 #endif
 
-#if ENABLE_SLEEPMODE
-  if(f_wdt == 1)
-  {
-    disableSleepTimer();
-#endif
-
-#if ENABLE_SOFTGPS
   // Put GPS serial in listen mode
-  gpsSerial.listen();
-#endif
+  // (2017 01 22 Robin: maybe not needed)
+  //Serial2.listen();
 
   // For GPS_INTERVAL we work on parsing GPS sentences
   for (unsigned long start = millis(); (elapsedTime(start) < GPS_INTERVAL) and !IS_READY;)
   {
-#if ENABLE_STATIC_GPS
-    for (int i=0; i<2; ++i)
+
+    while (Serial2.available())
     {
-      sendstring(gps, teststrs[i]);
-    }
-#else
-#if ENABLE_SOFTGPS
-    while (gpsSerial.available())
-    {
-      char c = gpsSerial.read();
-#else
-    while (Serial.available())
-    {
-      char c = Serial.read();
-#endif
+      char c = Serial2.read();
 
 #if ENABLE_GPS_NMEA_LOG
       Serial.print(c); // uncomment this line if you want to see the GPS data flowing
 #endif
+
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
     }
-#endif
   }
 
-#if ENABLE_SLEEPMODE
-  // Will wakeup in 4 seconds from now
-  enableSleepTimer();
-#endif
-
-#ifdef GPS_LED_PIN
-  if ((gpsReady) || (gps_status == AVAILABLE)) {
-   // digitalWrite(GPS_LED_PIN, HIGH);
-  } else {
-   // digitalWrite(GPS_LED_PIN, LOW);
-  }
-#endif
 
   // generate CPM every TIME_INTERVAL seconds
   if IS_READY {
       unsigned long cpm=0, cpb=0;
 
-#ifndef ENABLE_SLEEPMODE
-      // first, reset the watchdog timer
-      wdt_reset();
-#endif
-
-#if ENABLE_HARDWARE_COUNTER
-      // obtain the count in the last bin
-      cpb = hwc.count();
-
-      // reset the pulse counter
-      hwc.start();
-#else
       // obtain the count in the last bin
       cpb = interruptCounterCount();
 
       // reset the pulse counter
       interruptCounterReset();
-#endif
 
       // insert count in sliding window and compute CPM
       shift_reg[reg_index] = cpb;     // put the count in the correct bin
@@ -1146,7 +1023,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 			digitalWrite(LOGALARM_LED_PIN, LOW);
 			memset(line, 0, LINE_SZ);
 			sprintf_P(line, PSTR(PMTK_COLD_START));
-			gpsSerial.println(line);
+			Serial2.println(line);
     }
 
 
@@ -1178,19 +1055,19 @@ void gps_program_settings()
 #if ENABLE_MEDIATEK
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_OUTPUT_RMCGGA));
-  gpsSerial.println(line);
+  Serial2.println(line);
 
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(PMTK_SET_NMEA_UPDATE_1HZ));
-  gpsSerial.println(line);
+  Serial2.println(line);
 
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(SBAS_ENABLE));
-  gpsSerial.println(line);
+  Serial2.println(line);
 
   memset(line, 0, LINE_SZ);
   sprintf_P(line, PSTR(DGPS_WAAS_ON));
-  gpsSerial.println(line);
+  Serial2.println(line);
 #endif
 
 #if ENABLE_SKYTRAQ
@@ -1206,7 +1083,7 @@ void gps_program_settings()
   uint16_t GPS_MSG_PWR_SAVE_L = 3;
 
   // wait for GPS to start
-  while(!gpsSerial.available())
+  while(!Serial2.available())
     delay(10);
 
   // send all commands
@@ -1219,23 +1096,23 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
 {
   uint8_t chk = 0x0;
   // header
-  gpsSerial.write(0xA0);
-  gpsSerial.write(0xA1);
+  Serial2.write(0xA0);
+  Serial2.write(0xA1);
   // send length
-  gpsSerial.write(len >> 8);
-  gpsSerial.write(len & 0xff);
+  Serial2.write(len >> 8);
+  Serial2.write(len & 0xff);
   // send message
   for (unsigned int i = 0 ; i < len ; i++)
   {
-    gpsSerial.write(msg[i]);
+    Serial2.write(msg[i]);
     chk ^= msg[i];
   }
   // checksum
-  gpsSerial.write(chk);
+  Serial2.write(chk);
   // end of message
-  gpsSerial.write(0x0D);
-  gpsSerial.write(0x0A);
-  gpsSerial.write('\n');
+  Serial2.write(0x0D);
+  Serial2.write(0x0A);
+  Serial2.write('\n');
 }
 
 /* retrieve battery voltage */

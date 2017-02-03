@@ -31,9 +31,9 @@
 #include "NanoConfig.h"
 #include "NanoDebug.h"
 
-NanoSetup::NanoSetup(SoftwareSerial &openlog, ConfigType &config, DoseType &dose, 
+NanoSetup::NanoSetup(SdFat &sd_card, ConfigType &config, DoseType &dose, 
     char * buffer, size_t buffer_size):
-    mOpenlog(openlog), mConfig(config), mDose(dose), mBuffer(buffer), mBufferSize(buffer_size) {
+    sd_card(sd_card), mConfig(config), mDose(dose), mBuffer(buffer), mBufferSize(buffer_size) {
 }
 
 void NanoSetup::initialize() {
@@ -68,36 +68,24 @@ void NanoSetup::loadFromFile(char * setupFile) {
   char *config_buffer, *key, *value;
   byte pos, line_lenght;
   byte i, buffer_lenght;
-
-  mOpenlog.listen();
+  
+  File myFile;
 
   // Send read command to OpenLog
   DEBUG_PRINT(" - read ");
   DEBUG_PRINTLN(setupFile);
 
-  sprintf_P(mBuffer, PSTR("read %s 0 %d"), setupFile, mBufferSize);
-  mOpenlog.print(mBuffer);
-  mOpenlog.write(13); //This is \r
-
-  while(1) {
-    if(mOpenlog.available())
-      if(mOpenlog.read() == '\r') break;
+  // open the file for reading:
+  if (!myFile.open(setupFile, O_READ)) {
+    sd.errorHalt("opening test.txt for read failed");
   }
 
   // Read config file in memory
   pos = 0;
   memset(mBuffer, 0, mBufferSize);
-  for(int timeOut = 0 ; timeOut < 1000 ; timeOut++) {
-    if(mOpenlog.available()) {
-      mBuffer[pos++] = mOpenlog.read();
-      timeOut = 0;
-    }
-    delay(1);
-
-    if(pos == mBufferSize) {
+  while ((mBuffer[pos++] = myFile.read()) >= 0)
+    if (pos == mBuferSize)
       break;
-    }
-  }
 
   line_lenght = pos;
   pos = 0;

@@ -19,10 +19,10 @@
 #define ENABLE_DIAGNOSTIC        0
 #define ENABLE_SLEEPMODE         0
 #define ENABLE_SSD1306           1
-#define ENABLE_SOFTGPS           1
-#define ENABLE_STATIC_GPS        0
+#define ENABLE_SOFTGPS           0
+#define ENABLE_STATIC_GPS        1
 #define ENABLE_HARDWARE_COUNTER  0
-#define ENABLE_OPENLOG           1
+#define ENABLE_OPENLOG           0
 #define ENABLE_WAIT_GPS_FOR_LOG  1
 #define ENABLE_GPS_NMEA_LOG      0
 #define ENABLE_100M_TRUNCATION   0
@@ -59,6 +59,26 @@
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
   #define CUSTOM_FN_PIN 3
+#elif ENABLE_INTEGRATEDNANOKIT_PIN
+  #warning INTEGRATED NANO PCB used!
+  #define I2C1_SDA D0
+  #define I2C1_SCL D1
+  #define SPI3_MOSI D2
+  #define SPI3_MISO D3
+  #define SPI3_SCK D4
+  #define CS_LOG D5
+  #define PWR_ON D6
+  #define LCD_RST D7
+  #define RX_GPS D8
+  #define TX_GPS D9
+  #define IROVER D10
+  #define ENC_SW D11
+  #define BAT_MEASURE D12
+  #define PWR_OFF D13
+  #define ENC_A D14
+  #define ENC_B D15
+  #define RX_XBEE D16
+  #define TX_XBEE D17
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
