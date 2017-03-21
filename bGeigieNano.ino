@@ -30,11 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if defined(ARDUINO)
 SYSTEM_MODE(MANUAL);//do not connect to cloud
-#else
-SYSTEM_MODE(AUTOMATIC);//connect to cloud
-#endif
 
 #include "Adafruit_GPS.h"
 #include "application.h"
@@ -65,7 +61,6 @@ SYSTEM_MODE(AUTOMATIC);//connect to cloud
 // OLED settings --------------------------------------------------------------
 #if ENABLE_SSD1306
 
-#define OLED_RESET 7 // LCD_RST = D7
 Adafruit_SSD1306 display(OLED_RESET);
 
 #if (SSD1306_LCDHEIGHT != 32)
@@ -230,7 +225,8 @@ void setup()
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
 
 #if ENABLE_SSD1306
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  delay(1000);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
   // show splashscreen logo
   display.display();
   

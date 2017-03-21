@@ -62,6 +62,7 @@
   #define CUSTOM_FN_PIN 3
 #elif ENABLE_INTEGRATEDNANOKIT_PIN
   #warning INTEGRATED NANO PCB used!
+  #define OLED_RESET D7
   #define I2C1_SDA D0
   #define I2C1_SCL D1
   #define SPI3_MOSI D2
