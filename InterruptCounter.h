@@ -31,12 +31,9 @@
 #ifndef INTERRUPTCOUNTER_H
 #define INTERRUPTCOUNTER_H
 
-// Link to arduino library
-#if ARDUINO >= 100
+// Link to arduino library (so we require arduino >= 1.0.0)
 #include <Arduino.h>
-#else
-#include <WProgram.h>
-#endif
+
 
 
 // Defining the public functions for the counter
