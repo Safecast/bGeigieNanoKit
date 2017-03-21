@@ -33,7 +33,8 @@
 #define ENABLE_LND_DEADTIME      1 // enable dead-time compensation for LND7317
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
-#define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
+#define ENABLE_NANOPCBKIT_PIN    0 // use the nano pcb kit configuration
+#define ENABLE_INTEGRATEDNANOKIT_PIN    1 // use the integrated nano pcb kit configuration
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output
@@ -131,7 +132,7 @@
 // Voltage divider
 // GND -- R2 --A0 -- R1 -- VCC
 // https://en.wikipedia.org/wiki/Voltage_divider
-#define VOLTAGE_PIN A0
+#define VOLTAGE_PIN BAT_MEASURE
 #define VOLTAGE_R1 9100
 #define VOLTAGE_R2 1000
 
