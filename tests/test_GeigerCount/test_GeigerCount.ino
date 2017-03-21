@@ -9,7 +9,7 @@ SYSTEM_MODE(AUTOMATIC);//connect to cloud
  * and the InterruptCounter library
  */
 
-#include "../../InterruptCounter.h"
+#include "InterruptCounter.h"
 
 void setup()
 {
