@@ -46,7 +46,8 @@
 
 typedef enum {
  GEIGIE_TYPE_B = 0,
- GEIGIE_TYPE_X
+ GEIGIE_TYPE_X,
+ GEIGIE_TYPE_I
 } GeigieType;
 
 typedef enum {
@@ -78,7 +79,7 @@ typedef struct {
 
 typedef struct {
   unsigned long marker; // set at first run
-  byte type; // 0 for bGeigie, 1 for xGeigie
+  byte type; // 0 for bGeigie, 1 for xGeigie, 2 for Integrated
   byte mode; // 0 for uSv/h, 1 for Bq/m2
   char user_name[16];
   unsigned int device_id;

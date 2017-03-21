@@ -49,7 +49,7 @@ void NanoSetup::initialize() {
     mConfig.marker = BMRDD_EEPROM_MARKER;
     mConfig.device_id = NANO_DEVICE_ID;
     mConfig.timezone = 9;
-    sprintf_P(mConfig.country_code, PSTR("JPN"));
+    sprintf(mConfig.country_code, "JPN");
     mConfig.cpm_window = 60;
     mConfig.cpm_factor = NANO_CPM_FACTOR;
     mConfig.bqm_factor = NANO_BQM2_FACTOR;
@@ -76,15 +76,17 @@ void NanoSetup::loadFromFile(char * setupFile) {
   DEBUG_PRINTLN(setupFile);
 
   // open the file for reading:
-  if (!myFile.open(setupFile, O_READ)) {
-    sd.errorHalt("opening test.txt for read failed");
+  if (!myFile.open(setupFile, O_READ))
+  {
+    DEBUG_PRINTLN("Failed to read setup file from card.");
+    return;
   }
 
   // Read config file in memory
   pos = 0;
   memset(mBuffer, 0, mBufferSize);
   while ((mBuffer[pos++] = myFile.read()) >= 0)
-    if (pos == mBuferSize)
+    if (pos == mBufferSize)
       break;
 
   line_lenght = pos;
