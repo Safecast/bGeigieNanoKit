@@ -224,6 +224,18 @@ void setup()
   // Read the dose from EEPROM
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
 
+  // Take control of the RGB LED
+  RGB.control(true);
+  RGB.color(0, 0, 0);
+
+  // Soft shutdown control
+  /*
+  pinMode(PWR_ON, OUTPUT);
+  digitalWrite(PWR_ON, HIGH); // keep power one
+
+  pinMode(PWR_OFF, INPUT);  // sense power switch state
+  */
+
 #if ENABLE_SSD1306
   delay(1000);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
@@ -290,6 +302,21 @@ void setup()
 // ****************************************************************************
 void loop()
 {
+  // Perform check for Soft shutdown
+  /*
+  int power_off_status = digitalRead(PWR_OFF); // pin read high when switch is off
+  Serial.println(power_off_status);
+  if (power_off_status == HIGH)
+  {
+    Serial.println("Shutdown now");
+    display.setCursor(0, 0);
+    display.print("Shutdown now");
+    display.display();
+    delay(1000);
+    digitalWrite(PWR_ON, LOW);
+  }
+  */
+
   bool gpsReady = false;
 
 #if ENABLE_GEIGIE_SWITCH
@@ -432,7 +459,11 @@ void loop()
         // Open logfile and write the new record
         if (myFile.open(logfile_name, O_RDWR | O_CREAT | O_AT_END))
         {
+          // Indicate success writing to SD card.
+          RGB.color(0, 100, 0);
+
           myFile.println(line);
+          delay(10);
 
 #if ENABLE_DIAGNOSTIC
           // write some diagnostics if asked to
@@ -441,8 +472,24 @@ void loop()
           myFile.print("$DIAG,");
           myFile.println(strbuffer);
 #endif
+
+          RGB.color(0, 0, 0);
         }
-        myFile.close();
+        else
+        {
+          // Indicate that opening file failed
+          RGB.color(100, 0, 0);
+          delay(10);
+          RGB.color(0, 0, 0);
+          myFile.close();
+        }
+      }
+      else
+      {
+        // Indicate that logfile is not ready
+        RGB.color(0, 0, 100);
+        delay(10);
+        RGB.color(0, 0, 0);
       }
   }
 }
