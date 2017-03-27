@@ -22,6 +22,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "TinyGPS.h"
 
+#include <math.h>
+
+// We need to define a couple of math functions
+// for back compatibility
+
+#define TWO_PI 6.283185307179586
+
+float radians(float deg)
+{
+  return deg * TWO_PI / 360;
+}
+
+float degrees(float rad)
+{
+  return rad * 360. / TWO_PI;
+}
+
+float sq(float x)
+{
+  return sqrtf(x);
+}
+
 #define _GPRMC_TERM   "GPRMC"
 #define _GPGGA_TERM   "GPGGA"
 
@@ -340,20 +362,20 @@ float TinyGPS::distance_between (float lat1, float long1, float lat2, float long
   // Because Earth is no exact sphere, rounding errors may be up to 0.5%.
   // Courtesy of Maarten Lamers
   float delta = radians(long1-long2);
-  float sdlong = sin(delta);
-  float cdlong = cos(delta);
+  float sdlong = sinf(delta);
+  float cdlong = cosf(delta);
   lat1 = radians(lat1);
   lat2 = radians(lat2);
-  float slat1 = sin(lat1);
-  float clat1 = cos(lat1);
-  float slat2 = sin(lat2);
-  float clat2 = cos(lat2);
+  float slat1 = sinf(lat1);
+  float clat1 = cosf(lat1);
+  float slat2 = sinf(lat2);
+  float clat2 = cosf(lat2);
   delta = (clat1 * slat2) - (slat1 * clat2 * cdlong); 
   delta = sq(delta); 
   delta += sq(clat2 * sdlong); 
-  delta = sqrt(delta); 
+  delta = sq(delta); 
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong); 
-  delta = atan2(delta, denom); 
+  delta = atan2f(delta, denom); 
   return delta * 6372795; 
 }
 
@@ -366,10 +388,10 @@ float TinyGPS::course_to (float lat1, float long1, float lat2, float long2)
   float dlon = radians(long2-long1);
   lat1 = radians(lat1);
   lat2 = radians(lat2);
-  float a1 = sin(dlon) * cos(lat2);
-  float a2 = sin(lat1) * cos(lat2) * cos(dlon);
-  a2 = cos(lat1) * sin(lat2) - a2;
-  a2 = atan2(a1, a2);
+  float a1 = sinf(dlon) * cosf(lat2);
+  float a2 = sinf(lat1) * cosf(lat2) * cosf(dlon);
+  a2 = cosf(lat1) * sinf(lat2) - a2;
+  a2 = atan2f(a1, a2);
   if (a2 < 0.0)
   {
     a2 += TWO_PI;

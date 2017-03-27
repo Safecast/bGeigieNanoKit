@@ -30,14 +30,11 @@
 #ifndef _NANO_SETUP_H
 #define _NANO_SETUP_H
 
+#include "SdFat.h"
+
 // Link to arduino library
-#if ARDUINO >= 100
+// Let's assume we don't use an IDE too old.
 #include <Arduino.h>
-#else
-#include <WProgram.h>
-#endif
-#include <EEPROM.h>
-#include <SoftwareSerial.h>
 
 #define BMRDD_EEPROM_DOSE 200
 #define BMRDD_EEPROM_SETUP 500
@@ -49,7 +46,8 @@
 
 typedef enum {
  GEIGIE_TYPE_B = 0,
- GEIGIE_TYPE_X
+ GEIGIE_TYPE_X,
+ GEIGIE_TYPE_I
 } GeigieType;
 
 typedef enum {
@@ -81,7 +79,7 @@ typedef struct {
 
 typedef struct {
   unsigned long marker; // set at first run
-  byte type; // 0 for bGeigie, 1 for xGeigie
+  byte type; // 0 for bGeigie, 1 for xGeigie, 2 for Integrated
   byte mode; // 0 for uSv/h, 1 for Bq/m2
   char user_name[16];
   unsigned int device_id;
@@ -100,27 +98,19 @@ typedef struct {
 // Write a template value into EEPROM address [ee]
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
 {
-    const byte* p = (const byte*)(const void*)&value;
-    unsigned int i;
-    for (i = 0; i < sizeof(value); i++)
-          EEPROM.write(ee++, *p++);
-    return i;
+    EEPROM.put(ee, value);
 }
 
 // Read a template value from EEPROM address [ee]
 template <class T> int EEPROM_readAnything(int ee, T& value)
 {
-    byte* p = (byte*)(void*)&value;
-    unsigned int i;
-    for (i = 0; i < sizeof(value); i++)
-          *p++ = EEPROM.read(ee++);
-    return i;
+    EEPROM.get(ee, value);
 }
 
 class NanoSetup {
 
 public:
-  NanoSetup(SoftwareSerial &openlog, 
+  NanoSetup(SdFat &sd_card, 
         ConfigType &config, 
         DoseType &dose,
         char * buffer, size_t buffer_size);
@@ -128,7 +118,7 @@ public:
   void loadFromFile(char * setupFile);
 
 private:
-  SoftwareSerial &mOpenlog;
+  SdFat &sd_card;
   ConfigType &mConfig;
   DoseType &mDose;
 
