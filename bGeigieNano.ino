@@ -63,7 +63,7 @@ SYSTEM_MODE(MANUAL);//do not connect to cloud
 
 Adafruit_SSD1306 display(OLED_RESET);
 
-#if (SSD1306_LCDHEIGHT != 32)
+#if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please change Adafruit_SSD1306.h!");
 #endif
 
@@ -238,7 +238,7 @@ void setup()
 
 #if ENABLE_SSD1306
   delay(1000);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   // show splashscreen logo
   display.display();
   
@@ -321,7 +321,7 @@ void loop()
 
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
-  if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
+  if (analogRead(GEIGIE_TYPE_PIN) < GEIGIE_TYPE_THRESHOLD) {
     config.type = GEIGIE_TYPE_B; // XGeigie;
   } else {
     config.type = GEIGIE_TYPE_X; // BGeigie
