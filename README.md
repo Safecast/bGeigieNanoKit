@@ -1,9 +1,12 @@
 # Welcome to bGeigie Nano Kit project  
-[Main bGeigie Nano page] (http://blog.safecast.org/bgeigie-nano/)
-
+[Main bGeigie Nano page](http://blog.safecast.org/bgeigie-nano/)  
+Assembly and Operations Manual can be found on the [Wiki](https://github.com/Safecast/bGeigieNanoKit/wiki)  
+  
 The Safecast bGeigie Nano is a mobile, GPS enabled, logging, radiation sensor. It is designed for mounting on the outside of a car window but can be used on bicycles, trains, planes, and other modes of transportation.  
   
 It can also be used for taking static readings and contamination findings. In logging mode, the Nano takes a measurement every 5 seconds and logs the time and location coordinates.  
+
+
 
 # Acknowledgements
 This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
