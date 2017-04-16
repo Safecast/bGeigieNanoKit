@@ -1,13 +1,15 @@
 # Welcome to bGeigie Nano Kit project  
-(this file in in process of updating)
+[Main bGeigie Nano page] (http://blog.safecast.org/bgeigie-nano/)
 
-This is a lighter version of the bGeigie Mini which is meant to fit in a Pelican Micro Case 1010.
+The Safecast bGeigie Nano is a mobile, GPS enabled, logging, radiation sensor. It is designed for mounting on the outside of a car window but can be used on bicycles, trains, planes, and other modes of transportation.  
+  
+It can also be used for taking static readings and contamination findings. In logging mode, the Nano takes a measurement every 5 seconds and logs the time and location coordinates.  
 
 # Acknowledgements
 This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
 
 # Requirements
-* bGeigieNanoKit can be bought online from [Mecom](http://www.nanoxpress.com/)
+* bGeigieNanoKit can be bought online from [KitHub](https://shop.kithub.cc/products/safecast-bgeigie-nano)
 * for programing/updating software you need a FTDI cable drivers are at http://www.ftdichip.com/Drivers/VCP.htm
 * solder iron
 * time to make the kit (3-4 hours is normal)
