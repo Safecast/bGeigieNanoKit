@@ -114,10 +114,12 @@ To make sure all of the NMEA sentences can be received correctly, we will need t
     #define _SS_MAX_RX_BUFF 128 // RX buffer size for TinyGPS
 
 # Licenses
+ Licenses for this repository can be found at [here][10]
+ 
  * [InterruptHandler and bGeigieMini code][5] - Copyright (c) 2011, Robin Scheibler aka FakuFaku
  * [TinyGPS][6] - Copyright (C) 2008-2012 Mikal Hart
- * bGeigieNano - Copyright (c) 2012, Lionel Bergeret
  * [Makefile][8] - Copyright (c) 2012, Tim Marston
+ 
 
 
   [1]: https://github.com/sparkfun/OpenLog "OpenLog"
@@ -129,3 +131,4 @@ To make sure all of the NMEA sentences can be received correctly, we will need t
   [7]: https://www.adafruit.com/products/746 "Ultimate GPS"
   [8]: http://ed.am/dev/make/arduino-mk "Arduino Makefile"
   [9]: http://www.pelican.com/cases_detail.php?Case=1010 "Pelican 1010"
+  [10]: https://blog.safecast.org/faq/licenses/
