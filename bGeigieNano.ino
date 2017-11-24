@@ -30,6 +30,9 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+// 2017-11-24 V1.4.3   Setup for 5 seconds updates test.
+
 #include <limits.h>
 #include <SoftwareSerial.h>
 #include <math.h>
@@ -277,6 +280,11 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 // ****************************************************************************
 void setup()
 {
+
+#ifdef ENABLE_CUSTOM_FN
+  pinMode(CUSTOM_FN_PIN, INPUT_PULLUP);
+#endif
+
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
 #endif
@@ -765,7 +773,7 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
-void render_measurement(unsigned long value, bool is_cpm, int offset)
+void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, offset);
   display.setTextSize(2);
@@ -777,6 +785,13 @@ void render_measurement(unsigned long value, bool is_cpm, int offset)
 
   // Cleanup temp buffer
   memset(strbuffer1, 0, sizeof(strbuffer1));
+
+// display 5 second fast update mode if function key is pressed  
+      if (digitalRead(CUSTOM_FN_PIN)==LOW) {
+          value= (value5sec*12); // display 5 seconds data on display
+        } else {
+      }
+
 
   // display in CPM
   if (is_cpm) {
@@ -970,7 +985,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     #endif
 
     // Display CPM (with deadtime compensation)
-    render_measurement(cpm, true, offset);
+    render_measurement(cpb, cpm, true, offset);
     
     // Display SD, GPS and Geiger states
     display.setTextColor(WHITE);
@@ -1038,7 +1053,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     	}
     	
     // Display uSv/h
-    render_measurement(cpm, false, offset);
+    render_measurement(cpb, cpm, false, offset);
 	
     // Cleanup temp buffer
     memset(strbuffer1, 0, sizeof(strbuffer1));
