@@ -787,7 +787,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
   memset(strbuffer1, 0, sizeof(strbuffer1));
 
 // display 5 second fast update mode if function key is pressed  
-      if (digitalRead(CUSTOM_FN_PIN)==LOW) {
+      if (value >config.alarm_level) {
           value= (value5sec*12); // display 5 seconds data on display
         } else {
       }
@@ -802,12 +802,20 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
         strbuffer1[strlen(strbuffer1)-1] = 0;
       }
       display.print(strbuffer1);
-      sprintf_P(strbuffer, PSTR("kCPM"));
+        if (value >config.alarm_level) {
+          sprintf_P(strbuffer, PSTR("kCPM ^^^"));
+        } else {sprintf_P(strbuffer, PSTR("kCPM"));
+      }
+
       display.print(strbuffer);
     } else {
       dtostrf((float)value, 0, 0, strbuffer);
       display.print(strbuffer);
-      sprintf_P(strbuffer, PSTR(" CPM"));
+        if (value >config.alarm_level) {
+               sprintf_P(strbuffer, PSTR(" CPM ^^^"));
+        } else {sprintf_P(strbuffer, PSTR(" CPM"));
+      }
+      
       display.print(strbuffer);
     }
   } else {
