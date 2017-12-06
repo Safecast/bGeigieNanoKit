@@ -804,7 +804,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
       }
       display.print(strbuffer1);
         if (value >config.alarm_level) {
-          sprintf_P(strbuffer, PSTR("kCPM ^^^"));
+          sprintf_P(strbuffer, PSTR("kCPM^"));
         } else {sprintf_P(strbuffer, PSTR("kCPM"));
       }
 
@@ -813,7 +813,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
       dtostrf((float)value, 0, 0, strbuffer);
       display.print(strbuffer);
         if (value >config.alarm_level) {
-               sprintf_P(strbuffer, PSTR(" CPM ^^^"));
+               sprintf_P(strbuffer, PSTR(" CPM^"));
         } else {sprintf_P(strbuffer, PSTR(" CPM"));
       }
       
