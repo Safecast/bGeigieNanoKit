@@ -1174,9 +1174,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   if (battery > 8) battery = 8;
 
   //display  hotspot mode test
-  display.setCursor(95, offset+8);
-  display.print((cpm>config.alarm_level) ? "60s" : "5s");
+  display.setCursor(89, 0);
+  display.print((cpm>config.alarm_level) ? "5s" : "60s");
   //
+
   
 if (config.type == GEIGIE_TYPE_X){
 
