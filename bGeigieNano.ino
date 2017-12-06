@@ -803,20 +803,13 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
         strbuffer1[strlen(strbuffer1)-1] = 0;
       }
       display.print(strbuffer1);
-        if (value >config.alarm_level) {
-          sprintf_P(strbuffer, PSTR("kCPM^"));
-        } else {sprintf_P(strbuffer, PSTR("kCPM"));
-      }
+      sprintf_P(strbuffer, PSTR("kCPM"));
 
       display.print(strbuffer);
     } else {
       dtostrf((float)value, 0, 0, strbuffer);
       display.print(strbuffer);
-        if (value >config.alarm_level) {
-               sprintf_P(strbuffer, PSTR(" CPM^"));
-        } else {sprintf_P(strbuffer, PSTR(" CPM"));
-      }
-      
+      sprintf_P(strbuffer, PSTR(" CPM"));
       display.print(strbuffer);
     }
   } else {
@@ -1179,8 +1172,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   int battery =((read_voltage(VOLTAGE_PIN)-30));
   if (battery < 0) battery = 0;	
   if (battery > 8) battery = 8;
+
+  //display  hotspot mode test
+  display.setCursor(95, offset+8);
+  display.print((cpm>config.alarm_level) ? "60s" : "5s");
+  //
   
 if (config.type == GEIGIE_TYPE_X){
+
 display.drawRect(116, offset+24, 12, 7, WHITE);
 display.fillRect(118, offset+26, battery, 3, WHITE);
  } else {
