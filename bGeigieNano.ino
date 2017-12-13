@@ -1173,19 +1173,23 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   if (battery < 0) battery = 0;	
   if (battery > 8) battery = 8;
 
-  //display  hotspot mode test
-  display.setCursor(89, 0);
-  display.print((cpm>config.alarm_level) ? "5s" : "60s");
-  //
+ 
 
   
 if (config.type == GEIGIE_TYPE_X){
-
-display.drawRect(116, offset+24, 12, 7, WHITE);
-display.fillRect(118, offset+26, battery, 3, WHITE);
+   //display  hotspot mode test
+  display.setCursor(92, offset+24);
+  display.print((cpm>config.alarm_level) ? "5s" : "60s");
+  //
+  display.drawRect(116, offset+24, 12, 7, WHITE);
+  display.fillRect(118, offset+26, battery, 3, WHITE);
  } else {
+   //display  hotspot mode test
+  display.setCursor(92, offset+0);
+  display.print((cpm>config.alarm_level) ? "5s" : "60s");
+  //
   display.drawRect(116, offset+0, 12, 7, WHITE);
-display.fillRect(118, offset+2, battery, 3, WHITE);
+  display.fillRect(118, offset+2, battery, 3, WHITE);
 }
   display.display();
 #endif
