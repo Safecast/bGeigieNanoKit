@@ -798,7 +798,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
   if (is_cpm) {
     if(value >= 10000) {
       dtostrf((float)(value/1000.0), 4, 3, strbuffer);
-      strncpy (strbuffer1, strbuffer, 4);
+      strncpy (strbuffer1, strbuffer, 3);
       if (strbuffer1[strlen(strbuffer1)-1] == '.') {
         strbuffer1[strlen(strbuffer1)-1] = 0;
       }
@@ -1072,7 +1072,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  // Display CPM
 		  if (cpm > 1000) {
 			  dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
-			  strncpy (strbuffer1, strbuffer, 5);
+			  strncpy (strbuffer1, strbuffer, 4);
 			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 			  strbuffer1[strlen(strbuffer1)-1] = 0;
 			  } 
