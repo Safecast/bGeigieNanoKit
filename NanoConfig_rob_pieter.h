@@ -5,8 +5,8 @@
 // bGeigie Nano definitions
 //
 
-#define NANO_DEVICE_ID        0000
-#define NANO_VERSION       "1.4.0J"
+#define NANO_DEVICE_ID        2007
+#define NANO_VERSION       "1.4.3"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -32,7 +32,6 @@
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 #define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
-#define ENABLE_100M_TRUNCATION   1 // Truncate for Japan Post
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output

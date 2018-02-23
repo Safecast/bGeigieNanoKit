@@ -30,6 +30,10 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+// 2017-11-24 V1.3.7   Setup for 5 seconds updates test.
+// 2017-12-05 Setup mod for 5 seconds if cpm is bigger then alarm.
+
 #include <limits.h>
 #include <SoftwareSerial.h>
 #include <math.h>
@@ -277,6 +281,11 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 // ****************************************************************************
 void setup()
 {
+
+#ifdef ENABLE_CUSTOM_FN
+  pinMode(CUSTOM_FN_PIN, INPUT_PULLUP);
+#endif
+
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
 #endif
@@ -765,7 +774,7 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
-void render_measurement(unsigned long value, bool is_cpm, int offset)
+void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, offset);
   display.setTextSize(2);
@@ -778,16 +787,24 @@ void render_measurement(unsigned long value, bool is_cpm, int offset)
   // Cleanup temp buffer
   memset(strbuffer1, 0, sizeof(strbuffer1));
 
+// display 5 second fast update mode if function key is pressed  
+      if (value >config.alarm_level) {
+          value= (value5sec*12); // display 5 seconds data on display
+        } else {
+      }
+
+
   // display in CPM
   if (is_cpm) {
     if(value >= 10000) {
       dtostrf((float)(value/1000.0), 4, 3, strbuffer);
-      strncpy (strbuffer1, strbuffer, 4);
+      strncpy (strbuffer1, strbuffer, 3);
       if (strbuffer1[strlen(strbuffer1)-1] == '.') {
         strbuffer1[strlen(strbuffer1)-1] = 0;
       }
       display.print(strbuffer1);
       sprintf_P(strbuffer, PSTR("kCPM"));
+
       display.print(strbuffer);
     } else {
       dtostrf((float)value, 0, 0, strbuffer);
@@ -970,7 +987,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     #endif
 
     // Display CPM (with deadtime compensation)
-    render_measurement(cpm, true, offset);
+    render_measurement(cpb, cpm, true, offset);
     
     // Display SD, GPS and Geiger states
     display.setTextColor(WHITE);
@@ -1038,7 +1055,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     	}
     	
     // Display uSv/h
-    render_measurement(cpm, false, offset);
+    render_measurement(cpb, cpm, false, offset);
 	
     // Cleanup temp buffer
     memset(strbuffer1, 0, sizeof(strbuffer1));
@@ -1055,7 +1072,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		  // Display CPM
 		  if (cpm > 1000) {
 			  dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
-			  strncpy (strbuffer1, strbuffer, 5);
+			  strncpy (strbuffer1, strbuffer, 4);
 			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 			  strbuffer1[strlen(strbuffer1)-1] = 0;
 			  } 
@@ -1155,13 +1172,24 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   int battery =((read_voltage(VOLTAGE_PIN)-30));
   if (battery < 0) battery = 0;	
   if (battery > 8) battery = 8;
+
+ 
+
   
 if (config.type == GEIGIE_TYPE_X){
-display.drawRect(116, offset+24, 12, 7, WHITE);
-display.fillRect(118, offset+26, battery, 3, WHITE);
+   //display  hotspot mode test
+  display.setCursor(92, offset+24);
+  display.print((cpm>config.alarm_level) ? "5s" : "60s");
+  //
+  display.drawRect(116, offset+24, 12, 7, WHITE);
+  display.fillRect(118, offset+26, battery, 3, WHITE);
  } else {
+   //display  hotspot mode test
+  display.setCursor(92, offset+0);
+  display.print((cpm>config.alarm_level) ? "5s" : "60s");
+  //
   display.drawRect(116, offset+0, 12, 7, WHITE);
-display.fillRect(118, offset+2, battery, 3, WHITE);
+  display.fillRect(118, offset+2, battery, 3, WHITE);
 }
   display.display();
 #endif
