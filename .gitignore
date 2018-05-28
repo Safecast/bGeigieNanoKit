@@ -3,6 +3,7 @@
 *.o
 *.so
 *.a
+*.dep
 
 # OS generated files #
 ######################

@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        0000
-#define NANO_VERSION       "1.4.0J"
+#define NANO_VERSION       "1.4.0"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -17,8 +17,10 @@
 
 #define ENABLE_DEBUG             0
 #define ENABLE_DIAGNOSTIC        0
+#define ENABLE_SLEEPMODE         0
 #define ENABLE_SSD1306           1
 #define ENABLE_SOFTGPS           1
+#define ENABLE_STATIC_GPS        0
 #define ENABLE_HARDWARE_COUNTER  0
 #define ENABLE_OPENLOG           1
 #define ENABLE_WAIT_GPS_FOR_LOG  1
@@ -32,7 +34,6 @@
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 #define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
-#define ENABLE_100M_TRUNCATION   1 // Truncate for Japan Post
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output
@@ -104,7 +105,7 @@
 #define INTERRUPT_COUNTER_PIN 0
 
 // bGeigie <-> xGeigie switch pin
-#define GEIGIE_TYPE_PIN A7
+#define GEIGIE_TYPE_PIN A5
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider
