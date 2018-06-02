@@ -33,6 +33,7 @@
 
 // 2017-11-24 V1.3.7   Setup for 5 seconds updates test.
 // 2017-12-05 Setup mod for 5 seconds if cpm is bigger then alarm.
+// 2018-06-02 fix for SDcard reading (ray)
 
 #include <limits.h>
 #include <SoftwareSerial.h>
