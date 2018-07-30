@@ -34,6 +34,7 @@
 // 2017-11-24 V1.3.7   Setup for 5 seconds updates test.
 // 2017-12-05 Setup mod for 5 seconds if cpm is bigger then alarm.
 // 2018-06-02 fix for SDcard reading (ray)
+// 2018-07-29 fixe for smaller display.
 
 #include <limits.h>
 #include <SoftwareSerial.h>
@@ -788,7 +789,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
   // Cleanup temp buffer
   memset(strbuffer1, 0, sizeof(strbuffer1));
 
-// display 5 second fast update mode if function key is pressed  
+// display 5 second fast update mode if alam level is higher as set level on sdcard. 
       if (value >config.alarm_level) {
           value= (value5sec*12); // display 5 seconds data on display
         } else {
@@ -1178,14 +1179,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   
 if (config.type == GEIGIE_TYPE_X){
-   //display  hotspot mode test
+   //display  hotspot mode 
   display.setCursor(92, offset+24);
   display.print((cpm>config.alarm_level) ? "5s" : "60s");
   //
   display.drawRect(116, offset+24, 12, 7, WHITE);
   display.fillRect(118, offset+26, battery, 3, WHITE);
  } else {
-   //display  hotspot mode test
+   //display  hotspot mode 
   display.setCursor(92, offset+0);
   display.print((cpm>config.alarm_level) ? "5s" : "60s");
   //
