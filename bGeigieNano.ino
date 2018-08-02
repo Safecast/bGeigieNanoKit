@@ -776,6 +776,7 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
+//set extra variable for hot spot mode is_hotspot ad Boolean
 void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, offset);
@@ -846,6 +847,9 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
     }
   }
 }
+
+
+
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
@@ -989,6 +993,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     #endif
 
     // Display CPM (with deadtime compensation)
+ 
+
+
     render_measurement(cpb, cpm, true, offset);
     
     // Display SD, GPS and Geiger states
@@ -1009,11 +1016,17 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   
     }
 
+
+
     // Display uSv/h
     display.setTextColor(WHITE);
     display.setCursor(0, offset+16); // textsize*8
     if (config.mode == GEIGIE_MODE_USVH) {
-      dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
+      if (cpm>config.alarm_level){
+        dtostrf((float)(cpb/config.cpm_factor*12), 0, 3, strbuffer);
+      }else{
+        dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
+      }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
       display.println(strbuffer);
@@ -1073,7 +1086,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-			  dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
+          if (cpm>config.alarm_level){
+            dtostrf((float)(cpb/1000.00*12), 0, 1, strbuffer);
+          }else{
+            dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
+          }
 			  strncpy (strbuffer1, strbuffer, 4);
 			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 			  strbuffer1[strlen(strbuffer1)-1] = 0;
