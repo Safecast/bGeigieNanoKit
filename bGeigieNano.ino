@@ -1023,7 +1023,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, offset+16); // textsize*8
     if (config.mode == GEIGIE_MODE_USVH) {
       if (cpm>config.alarm_level){
-        dtostrf((float)(cpb/config.cpm_factor*12), 0, 3, strbuffer);
+      dtostrf((float)(cpb/config.cpm_factor*12), 0, 3, strbuffer);
       }else{
         dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
       }
@@ -1086,11 +1086,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 		} else {
 		  // Display CPM
 		  if (cpm > 1000) {
-          if (cpm>config.alarm_level){
-            dtostrf((float)(cpb/1000.00*12), 0, 1, strbuffer);
-          }else{
-            dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
-          }
+        if (cpm>config.alarm_level){
+          dtostrf((float)(cpb/1000.00*12), 0, 1, strbuffer);
+        }else{
+          dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
+        }
 			  strncpy (strbuffer1, strbuffer, 4);
 			  if (strbuffer1[strlen(strbuffer1)-1] == '.') {
 			  strbuffer1[strlen(strbuffer1)-1] = 0;
@@ -1099,7 +1099,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 			  sprintf_P(strbuffer, PSTR("kCPM "));
 			  display.print(strbuffer);
 			} else {
-			  dtostrf((float)cpm, 0, 0, strbuffer);
+        if (cpm>config.alarm_level){
+            dtostrf((float)cpb*12, 0, 0, strbuffer);
+          }else{
+            dtostrf((float)cpm, 0, 0, strbuffer);
+        }
 			  display.print(strbuffer);
 			  sprintf_P(strbuffer, PSTR("CPM "));
 			  display.print(strbuffer);

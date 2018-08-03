@@ -105,7 +105,7 @@
 #define INTERRUPT_COUNTER_PIN 0
 
 // bGeigie <-> xGeigie switch pin
-#define GEIGIE_TYPE_PIN A5
+#define GEIGIE_TYPE_PIN A7
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider
