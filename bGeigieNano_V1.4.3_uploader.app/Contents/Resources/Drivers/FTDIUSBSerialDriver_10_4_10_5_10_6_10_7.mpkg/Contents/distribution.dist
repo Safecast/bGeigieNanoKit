@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-script minSpecVersion="1.000000" authoringTool="com.apple.PackageMaker" authoringToolVersion="3.0.4" authoringToolBuild="179">
+    <title>FTDIUSBSerialDriverInstaller</title>
+    <options customize="allow" allow-external-scripts="no" rootVolumeOnly="true"/>
+    <script>
+function pm_choice0_selected() {
+  result = true;
+  result = result &amp;&amp; (/* >= */ system.compareVersions(system.version.ProductVersion, '10.4') >= 0);
+  result = result &amp;&amp; (/* &lt; */ system.compareVersions(system.version.ProductVersion, '10.6') &lt; 0);
+  return result;
+}
+
+
+function pm_choice0_enabled() {
+  result = true;
+  result = result &amp;&amp; (/* >= */ system.compareVersions(system.version.ProductVersion, '10.4') >= 0);
+  result = result &amp;&amp; (/* &lt; */ system.compareVersions(system.version.ProductVersion, '10.6') &lt; 0);
+  return result;
+}
+
+
+function pm_choice1_selected() {
+  result = true;
+  result = result &amp;&amp; (/* >= */ system.compareVersions(system.version.ProductVersion, '10.6') >= 0);
+  return result;
+}
+
+
+function pm_choice1_enabled() {
+  result = true;
+  result = result &amp;&amp; (/* >= */ system.compareVersions(system.version.ProductVersion, '10.6') >= 0);
+  return result;
+}</script>
+    <background file="background" alignment="center" scaling="none"/>
+    <readme file="ReadMe"/>
+    <choices-outline>
+        <line choice="choice4"/>
+        <line choice="choice0"/>
+        <line choice="choice1"/>
+        <line choice="choice5"/>
+    </choices-outline>
+    <choice id="choice4" title="FTDIUSBSerialDriverInstaller Preflight" start_visible="false">
+        <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.preflight.pkg"/>
+    </choice>
+    <choice id="choice0" title="FTDIUSBSerialDriver_10_4_10_5" selected="pm_choice0_selected()" enabled="pm_choice0_enabled()">
+        <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.FTDIUSBSerialDriver.pkg"/>
+    </choice>
+    <choice id="choice1" title="FTDIUSBSerialDriver_10_6_10_7" selected="pm_choice1_selected()" enabled="pm_choice1_enabled()">
+        <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.FTDIUSBSerialDriver-2.pkg"/>
+    </choice>
+    <choice id="choice5" title="FTDIUSBSerialDriverInstaller Postflight" start_visible="false">
+        <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.postflight.pkg"/>
+    </choice>
+    <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.preflight.pkg" installKBytes="0" version="1.0" auth="Root">file:./Contents/Packages/ftdiusbserialdriverinstallerPreflight.pkg</pkg-ref>
+    <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.FTDIUSBSerialDriver.pkg" installKBytes="368" version="1.0" auth="Root">file:./Contents/Packages/ftdiusbserialdriver.pkg</pkg-ref>
+    <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.FTDIUSBSerialDriver-2.pkg" installKBytes="356" version="1.0" auth="Root">file:./Contents/Packages/ftdiusbserialdriver-1.pkg</pkg-ref>
+    <pkg-ref id="com.FTDI.ftdiusbserialdriverinstaller.postflight.pkg" installKBytes="0" version="1.0" auth="Root">file:./Contents/Packages/ftdiusbserialdriverinstallerPostflight.pkg</pkg-ref>
+</installer-script>
