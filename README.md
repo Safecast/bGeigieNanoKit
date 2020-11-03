@@ -105,6 +105,27 @@ Once powered on the bGeigieNano will initiliaze a new log file on the SD card, s
 The OpenLog should start listening at 9600bps and in Command mode. Here is the content of the CONFIG.TXT file you have to create on the microSD card:
 
     9600,26,3,2
+    
+    
+## SAFECAST.TXT explanation.
+
+The content of the SAFECAST.TXT file can be altered. Please be carefull not to insert CR/LF (windows edittor does that automatically)
+
+    cpmf      cpm factor
+    bqmf      bq/m2 factor
+    nm        name  
+    did       devide id  
+    gt        geiger type  
+    gm        geiger mode  
+    al        alarm threshold  
+    cn        country code  
+    tz        timezone  
+    st        sensor type   
+    ss        sensor shield  
+    sh        sensor height  
+    sm        sensor mode  
+    dose      Reset total dose  
+
 
 ## SoftwareSerial update
 
