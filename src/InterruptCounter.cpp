@@ -40,6 +40,13 @@ unsigned long _count;
 // private methods here
 void interrupt_routine();
 
+//shock happen event
+void shock(){
+  // shock_on=true;
+  // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+  Serial.println("Shock happened");
+}
+
 // Constructor
 void interruptCounterSetup(int interrupt_pin, unsigned long delay)
 {
@@ -47,6 +54,10 @@ void interruptCounterSetup(int interrupt_pin, unsigned long delay)
   _delay = delay;
   _count = 0;
   attachInterrupt(_interrupt_pin, interrupt_routine, RISING);
+
+  //setupshock sensor at SHOCKPIN that triggers function shock
+  attachInterrupt(A6, shock, FALLING);
+  pinMode(A6, INPUT_PULLUP);
 }
 
 // call this to start the counter
@@ -81,4 +92,5 @@ void interrupt_routine()
 {
   _count++;
 }
+
 

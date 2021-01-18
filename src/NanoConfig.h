@@ -58,6 +58,7 @@
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
   #define CUSTOM_FN_PIN 3
+  #define SHOCKPIN A6
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled

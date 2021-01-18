@@ -93,6 +93,7 @@ unsigned long int gps_distance = 0;
 #define LOGFILE_HEADER "# NEW LOG\n# format="
 char logfile_name[13];  // placeholder for filename
 bool logfile_ready = false;
+bool shock_on=true;
 
 // geiger statistics
 unsigned long shift_reg[NX] = {0};
@@ -172,6 +173,7 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 void setup()
 {
 
+
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
 #endif
@@ -180,7 +182,10 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
+//setup serial
   Serial.begin(9600);
+  Serial.println("START SETUP");
+
 
 
 #if ENABLE_OPENLOG
@@ -278,17 +283,23 @@ void setup()
 
 
 
+
+
 // ****************************************************************************
 // Main loop
 // ****************************************************************************
 void loop()
 {
-// to be implemented with shock sensor
-  // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
-  // delay(4000);
-  // display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-  // delay(4000);  
-  // bool gpsReady = false;
+  // code for display dimming
+      if (shock_on) {
+      display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+    }
+      else {
+      display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+      }
+
+
+  bool gpsReady = false;
 
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
@@ -630,7 +641,7 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
       // display 5 second fast update mode if function key is pressed  
       if (digitalRead(CUSTOM_FN_PIN)==LOW) {
           value= (value5sec*12); // display 5 seconds data on display
-        } else {
+          } else {
       }
 
   
