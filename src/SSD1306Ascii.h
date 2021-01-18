@@ -35,13 +35,15 @@
  */
 #define OPTIMIZE_AVR_SPI 1
 //------------------------------------------------------------------------------
-// Values for writeDisplay() mode paarameter.
+// Values for writeDisplay() mode parameter.
 /** Write to Command register. */
 #define SSD1306_MODE_CMD     0
 /** Write one byte to display RAM. */
 #define SSD1306_MODE_RAM     1
 /** Write to display RAM with possible buffering. */
 #define SSD1306_MODE_RAM_BUF 2
+
+
 //------------------------------------------------------------------------------
 /**
  * @class SSD1306Ascii

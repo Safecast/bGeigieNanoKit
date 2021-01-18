@@ -30,12 +30,27 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+//
 // 2017-11-24 V1.4.3   Setup for 5 seconds updates test.
 // 2018-02-24 V1.4.4J  Setup for JP 100m TRUNCATION.
 // 2018-06-17 V1.4.5 removed Japanese. trucation
 // 2018-08-03 V1.4.7 5 seconds update display
 // 2019-22-01 V1.4.8 updated copyright year
+// 2020-01-15 V1.4.9 updated year started for dimming display
+/* 
+-- Check code for blanking display
+
+        void sleepDisplay(Adafruit_SSD1306* display) {
+          display->ssd1306_command(SSD1306_DISPLAYOFF);
+        }
+
+        void wakeDisplay(Adafruit_SSD1306* display) {
+          display->ssd1306_command(SSD1306_DISPLAYON);
+        }
+-- Setup in loop shock detector and timer (millis)
+-- Setup Doxygen files
+
+*/
 #include <limits.h>
 #include <SoftwareSerial.h>
 #include <math.h>
@@ -156,6 +171,7 @@ NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 // ****************************************************************************
 void setup()
 {
+
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
 #endif
@@ -267,7 +283,12 @@ void setup()
 // ****************************************************************************
 void loop()
 {
-  bool gpsReady = false;
+// to be implemented with shock sensor
+  // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+  // delay(4000);
+  // display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+  // delay(4000);  
+  // bool gpsReady = false;
 
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
