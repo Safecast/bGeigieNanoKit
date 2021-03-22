@@ -36,17 +36,22 @@ int _interrupt_pin;
 unsigned long _start_time;
 unsigned long _delay;
 unsigned long _count;
+bool _shock_happend;
 
 // private methods here
 void interrupt_routine();
 
 //shock happen event
 void shock(){
-  // shock_on=true;
   // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
-  Serial.println("Shock happened");
+  _shock_happend = true;
 }
 
+// return current number of counts
+bool interruptShockTrue()
+{
+  return _shock_happend;
+}
 
 // Constructor
 void interruptCounterSetup(int interrupt_pin, unsigned long delay)
