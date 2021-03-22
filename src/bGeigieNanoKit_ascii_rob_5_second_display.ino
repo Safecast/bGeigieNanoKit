@@ -205,6 +205,7 @@ void setup()
 
   // Create pulse counter
   interruptCounterSetup(INTERRUPT_COUNTER_PIN, TIME_INTERVAL);
+  
 
   // And now Start the Pulse Counter!
   interruptCounterReset();

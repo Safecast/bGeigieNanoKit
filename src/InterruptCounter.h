@@ -41,6 +41,7 @@
 
 // Defining the public functions for the counter
 void interruptCounterSetup(int interrupt_pin, unsigned long delay);
+void interruptShockSetup(int interrupt_pin, unsigned long delay);
 void interruptCounterReset();
 int interruptCounterAvailable();
 unsigned long interruptCounterCount();
