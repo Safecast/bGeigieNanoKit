@@ -9,7 +9,7 @@ It can also be used for taking static readings and contamination findings. In lo
 
 
 # Acknowledgements
-This work would not exist without the original development by [bidouilles] (https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast] (https://github.com/Safecast/bGeigieNano) developers.
+This work would not exist without the original development by [bidouilles](https://github.com/bidouilles/bGeigieNano) and contributions of other [safecast](https://github.com/Safecast/bGeigieNano) developers.
 
 # Requirements
 * bGeigieNanoKit can be bought online from [KitHub](https://shop.kithub.cc/products/safecast-bgeigie-nano)
