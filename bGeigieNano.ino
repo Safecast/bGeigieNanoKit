@@ -426,7 +426,7 @@ void loop()
     config.type = GEIGIE_TYPE_X; // BGeigie
     digitalWrite(LOGALARM_LED_PIN, LOW);
   }
-#endif
+#endif  /* ENABLE_GEIGIE_SWITCH */
 
 #if ENABLE_GEIGIE_SWITCH
   //Switch to bGeigie Xmode on low battery
@@ -435,18 +435,18 @@ void loop()
        delay(1000);
        config.type = GEIGIE_TYPE_X; // BGeigie
   }
-#endif
+#endif  /* ENABLE_GEIGIE_SWITCH */
 
 #if ENABLE_SLEEPMODE
   if(f_wdt == 1)
   {
     disableSleepTimer();
-#endif
+#endif  /* ENABLE_SLEEPMODE */
 
 #if ENABLE_SOFTGPS
   // Put GPS serial in listen mode
   gpsSerial.listen();
-#endif
+#endif  /* ENABLE_SOFTGPS */
 
   // For GPS_INTERVAL we work on parsing GPS sentences
   for (unsigned long start = millis(); (elapsedTime(start) < GPS_INTERVAL) and !IS_READY;)
@@ -465,21 +465,21 @@ void loop()
     while (Serial.available())
     {
       char c = Serial.read();
-#endif
+#endif  /* ENABLE_SOFTGPS */
 
 #if ENABLE_GPS_NMEA_LOG
       Serial.print(c); // uncomment this line if you want to see the GPS data flowing
-#endif
+#endif  /* ENABLE_GPS_NMEA_LOG */
       if (gps.encode(c)) // Did a new valid sentence come in?
         gpsReady = true;
     }
-#endif
+#endif  /* ENABLE_STATIC_GPS */
   }
 
 #if ENABLE_SLEEPMODE
   // Will wakeup in 4 seconds from now
   enableSleepTimer();
-#endif
+#endif  /* ENABLE_SLEEPMODE */
 
 #ifdef GPS_LED_PIN
   if ((gpsReady) || (gps_status == AVAILABLE)) {
@@ -487,7 +487,7 @@ void loop()
   } else {
    // digitalWrite(GPS_LED_PIN, LOW);
   }
-#endif
+#endif  /* GPS_LED_PIN */
 
   // generate CPM every TIME_INTERVAL seconds
   if IS_READY {
@@ -496,7 +496,7 @@ void loop()
 #ifndef ENABLE_SLEEPMODE
       // first, reset the watchdog timer
       wdt_reset();
-#endif
+#endif  /* ENABLE_SLEEPMODE */
 
 #if ENABLE_HARDWARE_COUNTER
       // obtain the count in the last bin
@@ -510,7 +510,7 @@ void loop()
 
       // reset the pulse counter
       interruptCounterReset();
-#endif
+#endif  /* ENABLE_HARDWARE_COUNTER */
 
       // insert count in sliding window and compute CPM
       shift_reg[reg_index] = cpb;     // put the count in the correct bin
@@ -530,7 +530,7 @@ void loop()
       if (dose.total_time % BMRDD_EEPROM_DOSE_WRITETIME == 0) {
          EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
       }
-#endif
+#endif  /* ENABLE_EEPROM_DOSE */
 
       // set status of Geiger
       if (str_count < NX)
@@ -547,7 +547,7 @@ void loop()
       if ((!logfile_ready) && (gps_status == AVAILABLE))
 #else
       if (!logfile_ready)
-#endif
+#endif  /* ENABLE_WAIT_GPS_FOR_LOG */
       {
          if (gps_gen_filename(gps, logfile_name)) {
            logfile_ready = true;
@@ -555,7 +555,7 @@ void loop()
 #if ENABLE_OPENLOG
 #ifdef LOGALARM_LED_PIN
            //digitalWrite(LOGALARM_LED_PIN, HIGH);
-#endif
+#endif  /* LOGALARM_LED_PIN */
            createFile(logfile_name);
            // print header to serial
            sprintf_P(strbuffer, PSTR(LOGFILE_HEADER));
@@ -569,10 +569,10 @@ void loop()
            sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n"));
 #else
            sprintf_P(strbuffer, PSTR("nano\n"));
-#endif
+#endif  /* ENABLE_LND_DEADTIME */
            OpenLog.print(strbuffer);
 
-#endif // ENABLE_OPENLOG
+#endif  /* ENABLE_OPENLOG */
          }
       }
 
@@ -589,7 +589,7 @@ void loop()
       if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
 #ifdef LOGALARM_LED_PIN
         //digitalWrite(LOGALARM_LED_PIN, HIGH);
-#endif
+#endif  /* LOGALARM_LED_PIN */
         // Put OpenLog serial in listen mode
         OpenLog.listen();
         OpenLog.println(line);
@@ -598,12 +598,12 @@ void loop()
         dtostrf(read_voltage(VOLTAGE_PIN), 0, 1, strbuffer);
         OpenLog.print("$DIAG,");
         OpenLog.println(strbuffer);
-#endif
+#endif  /* ENABLE_DIAGNOSTIC */
       }
 #ifdef LOGALARM_LED_PIN
       //digitalWrite(LOGALARM_LED_PIN, LOW);
-#endif
-#endif
+#endif  /* LOGALARM_LED_PIN */
+#endif  /* ENABLE_OPENLOG */
   }
 
 
