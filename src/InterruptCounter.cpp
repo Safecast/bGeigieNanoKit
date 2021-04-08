@@ -47,6 +47,7 @@ void shock(){
   Serial.println("Shock happened");
 }
 
+
 // Constructor
 void interruptCounterSetup(int interrupt_pin, unsigned long delay)
 {
@@ -59,6 +60,10 @@ void interruptCounterSetup(int interrupt_pin, unsigned long delay)
   attachInterrupt(A6, shock, FALLING);
   pinMode(A6, INPUT_PULLUP);
 }
+
+
+
+
 
 // call this to start the counter
 void interruptCounterReset()
