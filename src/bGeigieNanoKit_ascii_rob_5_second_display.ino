@@ -106,6 +106,7 @@ int upminute = 0;
 int str_count = 0;
 int maxLength_over_k = 3;
 char geiger_status = VOID;
+bool shock_happend = false;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
@@ -205,6 +206,7 @@ void setup()
 
   // Create pulse counter
   interruptCounterSetup(INTERRUPT_COUNTER_PIN, TIME_INTERVAL);
+  
 
   // And now Start the Pulse Counter!
   interruptCounterReset();
@@ -1029,9 +1031,16 @@ if (config.type == GEIGIE_TYPE_B) {
   }
 
 
-  //display  hotspot mode test
+  //display  hotspot mode also used for shock detect display
+  shock_happend=interruptShockTrue();
   display.setCursor(92, 0);
-  display.print((digitalRead(CUSTOM_FN_PIN)==LOW) ? " 5s" : "60s");
+  if(!shock_happend){
+    display.print((digitalRead(CUSTOM_FN_PIN)==LOW) ? " 5s" : "60s");
+    }else{
+      display.print("SH");
+      shock_happend=!shock_happend;
+  }
+ 
   //
 
 
