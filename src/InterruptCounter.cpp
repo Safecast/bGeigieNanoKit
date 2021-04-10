@@ -73,13 +73,6 @@ void interruptShockSetup(int interrupt_pin, unsigned long delay)
 
 }
 
-
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 2ffa47bf32320ec2f58f6d3a832ee5dbf1f9ebe3
 // call this to start the counter
 void interruptCounterReset()
 {
