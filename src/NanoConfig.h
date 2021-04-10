@@ -58,7 +58,6 @@
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
   #define CUSTOM_FN_PIN 3
-#define SHOCKPIN A6 // for detecting shock if shock sensor is connected
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
@@ -103,6 +102,9 @@
 // InterruptCounter pin
 // 0 = D2, 1 = D3
 #define INTERRUPT_COUNTER_PIN 0
+
+// for detecting shock if shock sensor is connected
+#define SHOCKPIN A6 
 
 // bGeigie <-> xGeigie switch pin
 //Rob and Pieter versions with old board are A7 normal is A5
