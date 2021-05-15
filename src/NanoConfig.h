@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        2007
-#define NANO_VERSION       "1.4.8"
+#define NANO_VERSION       "1.4.9"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -104,11 +104,11 @@
 #define INTERRUPT_COUNTER_PIN 0
 
 // for detecting shock if shock sensor is connected
-#define SHOCKPIN A6 
+#define SHOCKPIN A1 
 
 // bGeigie <-> xGeigie switch pin
 //Rob and Pieter versions with old board are A7 normal is A5
-#define GEIGIE_TYPE_PIN A5
+#define GEIGIE_TYPE_PIN A6
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider

@@ -30,8 +30,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-//
-// 2017-11-24 V1.4.3   Setup for 5 seconds updates test.
+// 2020-05-15 V1.4.9 Moved interup counter from detect from SHOCKPIN to A1 (A1 csan be used as hardware interrupt A6 not) 
+// 2017-11-24 V1.4.3 Setup for 5 seconds updates test.
 // 2018-02-24 V1.4.4J  Setup for JP 100m TRUNCATION.
 // 2018-06-17 V1.4.5 removed Japanese. trucation
 // 2018-08-03 V1.4.7 5 seconds update display
@@ -64,17 +64,15 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiSoftSpi.h"
 
-
 // OLED settings --------------------------------------------------------------
 SSD1306AsciiSoftSpi display;
-
 
 // Geiger settings ------------------------------------------------------------
 #define LINE_SZ 100
 #define BUFFER_SZ 12
 #define STRBUFFER_SZ 32
-#define AVAILABLE 'A'  // indicates geiger data are ready (available)
-#define VOID      'V'  // indicates geiger data not ready (void)
+#define AVAILABLE 'A' // indicates geiger data are ready (available)
+#define VOID 'V'      // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
 #define NX 12
 #define TIME_INTERVAL 5000
@@ -91,9 +89,9 @@ unsigned long int gps_distance = 0;
 
 // log file headers
 #define LOGFILE_HEADER "# NEW LOG\n# format="
-char logfile_name[13];  // placeholder for filename
+char logfile_name[13]; // placeholder for filename
 bool logfile_ready = false;
-bool shock_on=true;
+bool shock_on = true;
 
 // geiger statistics
 unsigned long shift_reg[NX] = {0};
@@ -112,7 +110,6 @@ bool shock_happend = false;
 static char line[LINE_SZ];
 static char strbuffer[STRBUFFER_SZ];
 static char strbuffer1[STRBUFFER_SZ];
-
 
 // OpenLog settings -----------------------------------------------------------
 #define OPENLOG_RETRY 200
@@ -142,7 +139,6 @@ static char lon[BUFFER_SZ];
 #define SBAS_ENABLE "$PMTK313,1*2E\r\n"
 #define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
 
-
 // Function definitions ---------------------------------------------------------
 // Atmel Tips and Tricks: 3.6 Tip #6 – Access types: Static
 static unsigned long cpm_gen();
@@ -159,7 +155,6 @@ static float read_voltage(int pin);
 static int availableMemory();
 static unsigned long elapsedTime(unsigned long startTime);
 
-
 // Nano Settings --------------------------------------------------------------
 static ConfigType config;
 static DoseType dose;
@@ -167,13 +162,11 @@ static DoseType dose;
 NanoSetup nanoSetup(OpenLog, config, dose, line, LINE_SZ);
 #endif
 
-
 // ****************************************************************************
 // Setup
 // ****************************************************************************
 void setup()
 {
-
 
 #ifdef GPS_LED_PIN
   pinMode(GPS_LED_PIN, OUTPUT);
@@ -183,11 +176,9 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
-//setup serial
+  //setup serial
   Serial.begin(9600);
   Serial.println("START SETUP");
-
-
 
 #if ENABLE_OPENLOG
   // Load EEPROM settings
@@ -195,22 +186,21 @@ void setup()
 
   OpenLog.begin(9600);
   setupOpenLog();
-  if (openlog_ready) {
+  if (openlog_ready)
+  {
     nanoSetup.loadFromFile("SAFECAST.TXT");
   }
 #endif
-
 
   //setup function key
   pinMode(CUSTOM_FN_PIN, INPUT_PULLUP);
 
   // Create pulse counter
   interruptCounterSetup(INTERRUPT_COUNTER_PIN, TIME_INTERVAL);
-  
+
   //setup shockpin
-
-
   interruptShockSetup(SHOCKPIN, TIME_INTERVAL);
+
   // And now Start the Pulse Counter!
   interruptCounterReset();
 
@@ -221,7 +211,6 @@ void setup()
 
   // initialize and program the GPS module
   gps_program_settings();
-
 
 #if ENABLE_EEPROM_DOSE
   EEPROM_readAnything(BMRDD_EEPROM_DOSE, dose);
@@ -239,9 +228,12 @@ void setup()
 
   sprintf_P(strbuffer, PSTR("Geigie Nano %s"), NANO_VERSION);
   display.setCursor(0, 0);
-  if (config.type == GEIGIE_TYPE_B) {
+  if (config.type == GEIGIE_TYPE_B)
+  {
     display.print("b");
-  } else {
+  }
+  else
+  {
     display.print("x");
   }
   display.print(strbuffer);
@@ -249,8 +241,10 @@ void setup()
   display.setCursor(0, 1);
   int battery = ((read_voltage(VOLTAGE_PIN) - 30) * 12.5);
   battery = (battery + 20);
-  if (battery < 0) battery = 1;
-  if (battery > 100) battery = 100;
+  if (battery < 0)
+    battery = 1;
+  if (battery > 100)
+    battery = 100;
   sprintf_P(strbuffer, PSTR("Battery= %02d"), battery);
   display.print(strbuffer);
   sprintf_P(strbuffer, PSTR("%%"));
@@ -262,18 +256,18 @@ void setup()
   sprintf_P(strbuffer, PSTR("CPM"));
   display.print(strbuffer);
 
-
   display.setCursor(0, 3);
   sprintf_P(strbuffer, PSTR("Mode =%d"), config.sensor_mode);
   display.print(strbuffer);
 
-//display.setTextSize(1);
+  //display.setTextSize(1);
   display.setCursor(0, 4);
   sprintf_P(strbuffer, PSTR("#%04d"), config.device_id);
   display.print(strbuffer);
 
-//display.setTextSize(1);
-  if (strlen(config.user_name)) {
+  //display.setTextSize(1);
+  if (strlen(config.user_name))
+  {
     display.setCursor(0, 5); // textsize*8
     display.print(config.user_name);
   }
@@ -283,12 +277,7 @@ void setup()
 
   delay(5000);
   display.clear();
-
 }
-
-
-
-
 
 // ****************************************************************************
 // Main loop
@@ -296,21 +285,25 @@ void setup()
 void loop()
 {
   // code for display dimming
-      if (shock_on) {
-      display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-    }
-      else {
-      display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
-      }
-
+  if (shock_on)
+  {
+    display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+  }
+  else
+  {
+    display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+  }
 
   bool gpsReady = false;
 
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
-  if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD) {
+  if (analogRead(GEIGIE_TYPE_PIN) > GEIGIE_TYPE_THRESHOLD)
+  {
     config.type = GEIGIE_TYPE_B; // XGeigie;
-  } else {
+  }
+  else
+  {
     config.type = GEIGIE_TYPE_X; // BGeigie
     digitalWrite(LOGALARM_LED_PIN, LOW);
   }
@@ -319,7 +312,8 @@ void loop()
 #if ENABLE_GEIGIE_SWITCH
   //Switch to bGeigie Xmode on low battery
   int battery = ((read_voltage(VOLTAGE_PIN) - 30));
-  if (battery < 1)  {
+  if (battery < 1)
+  {
     delay(1000);
     config.type = GEIGIE_TYPE_X; // BGeigie
   }
@@ -352,42 +346,46 @@ void loop()
     }
   }
 
-
 #ifdef GPS_LED_PIN
-  if ((gpsReady) || (gps_status == AVAILABLE)) {
+  if ((gpsReady) || (gps_status == AVAILABLE))
+  {
     // digitalWrite(GPS_LED_PIN, HIGH);
-  } else {
+  }
+  else
+  {
     // digitalWrite(GPS_LED_PIN, LOW);
   }
 #endif
 
   // generate CPM every TIME_INTERVAL seconds
-  if IS_READY {
-  unsigned long cpm = 0, cpb = 0;
+  if IS_READY
+  {
+    unsigned long cpm = 0, cpb = 0;
 
-
-  // obtain the count in the last bin
-  cpb = interruptCounterCount();
+    // obtain the count in the last bin
+    cpb = interruptCounterCount();
 
     // reset the pulse counter
     interruptCounterReset();
 
     // insert count in sliding window and compute CPM
-    shift_reg[reg_index] = cpb;     // put the count in the correct bin
+    shift_reg[reg_index] = cpb;       // put the count in the correct bin
     reg_index = (reg_index + 1) % NX; // increment register index
-    cpm = cpm_gen();                // compute sum over all bins
+    cpm = cpm_gen();                  // compute sum over all bins
 
     // update the total counter
     total_count += cpb;
     uptime += 5;
 
     // update max cpm
-    if (cpm > max_count) max_count = cpm;
+    if (cpm > max_count)
+      max_count = cpm;
 
 #if ENABLE_EEPROM_DOSE
     dose.total_count += cpb;
     dose.total_time += 5;
-    if (dose.total_time % BMRDD_EEPROM_DOSE_WRITETIME == 0) {
+    if (dose.total_time % BMRDD_EEPROM_DOSE_WRITETIME == 0)
+    {
       EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
     }
 #endif
@@ -397,9 +395,13 @@ void loop()
     {
       geiger_status = VOID;
       str_count++;
-    } else if (cpm == 0) {
+    }
+    else if (cpm == 0)
+    {
       geiger_status = VOID;
-    } else {
+    }
+    else
+    {
       geiger_status = AVAILABLE;
     }
 
@@ -409,7 +411,8 @@ void loop()
     if (!logfile_ready)
 #endif
     {
-      if (gps_gen_filename(gps, logfile_name)) {
+      if (gps_gen_filename(gps, logfile_name))
+      {
         logfile_ready = true;
 
 #if ENABLE_OPENLOG
@@ -446,7 +449,8 @@ void loop()
     Serial.println(line);
 
 #if ENABLE_OPENLOG
-    if ((logfile_ready) && (GEIGIE_TYPE_B == config.type)) {
+    if ((logfile_ready) && (GEIGIE_TYPE_B == config.type))
+    {
 #ifdef LOGALARM_LED_PIN
       //digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
@@ -472,31 +476,41 @@ void loop()
 // ****************************************************************************
 
 /* calculate elapsed time. this takes into account rollover */
-unsigned long elapsedTime(unsigned long startTime) {
+unsigned long elapsedTime(unsigned long startTime)
+{
   unsigned long stopTime = millis();
 
-  if (startTime >= stopTime) {
+  if (startTime >= stopTime)
+  {
     return startTime - stopTime;
-  } else {
+  }
+  else
+  {
     return (ULONG_MAX - (startTime - stopTime));
   }
 }
 
 #if ENABLE_OPENLOG
 /* wait for openlog prompt */
-bool waitOpenLog(bool commandMode) {
+bool waitOpenLog(bool commandMode)
+{
   int safeguard = 0;
   bool result = false;
 
-  while (safeguard < OPENLOG_RETRY) {
+  while (safeguard < OPENLOG_RETRY)
+  {
     safeguard++;
     if (OpenLog.available())
-      if (OpenLog.read() == (commandMode ? '>' : '<')) break;
+      if (OpenLog.read() == (commandMode ? '>' : '<'))
+        break;
     delay(10);
   }
 
-  if (safeguard >= OPENLOG_RETRY) {
-  } else {
+  if (safeguard >= OPENLOG_RETRY)
+  {
+  }
+  else
+  {
     result = true;
   }
 
@@ -504,7 +518,8 @@ bool waitOpenLog(bool commandMode) {
 }
 
 /* setups up the software serial, resets OpenLog */
-void setupOpenLog() {
+void setupOpenLog()
+{
   pinMode(resetOpenLog, OUTPUT);
   OpenLog.listen();
 
@@ -513,35 +528,43 @@ void setupOpenLog() {
   delay(100);
   digitalWrite(resetOpenLog, HIGH);
 
-  if (!waitOpenLog(true)) {
+  if (!waitOpenLog(true))
+  {
     logfile_ready = true;
-  } else {
+  }
+  else
+  {
     openlog_ready = true;
   }
 }
 
 /* create a new file */
-void createFile(char *fileName) {
+void createFile(char *fileName)
+{
   int result = 0;
   int safeguard = 0;
 
   OpenLog.listen();
 
-  do {
+  do
+  {
     result = 0;
 
-    do {
+    do
+    {
       OpenLog.print("append ");
       OpenLog.print(fileName);
       OpenLog.write(13); //This is \r
 
-      if (!waitOpenLog(false)) {
+      if (!waitOpenLog(false))
+      {
         break;
       }
       result = 1;
     } while (0);
 
-    if (0 == result) {
+    if (0 == result)
+    {
       // reset OpenLog
       digitalWrite(resetOpenLog, LOW);
       delay(100);
@@ -562,7 +585,7 @@ char checksum(char *s, int N)
   int i = 0;
   char chk = s[0];
 
-  for (i = 1 ; i < N ; i++)
+  for (i = 1; i < N; i++)
     chk ^= s[i];
 
   return chk;
@@ -575,7 +598,7 @@ unsigned long cpm_gen()
   unsigned long c_p_m = 0;
 
   // sum up
-  for (i = 0 ; i < NX ; i++)
+  for (i = 0; i < NX; i++)
     c_p_m += shift_reg[i];
 
 #ifdef ENABLE_LND_DEADTIME
@@ -586,13 +609,15 @@ unsigned long cpm_gen()
 }
 
 /* generate log filename */
-bool gps_gen_filename(TinyGPS &gps, char *buf) {
+bool gps_gen_filename(TinyGPS &gps, char *buf)
+{
   int year = DEFAULT_YEAR;
   byte month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   unsigned long age;
 
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
-  if (TinyGPS::GPS_INVALID_AGE == age) {
+  if (TinyGPS::GPS_INVALID_AGE == age)
+  {
     return false;
   }
 
@@ -610,9 +635,12 @@ void get_coordinate_string(bool is_latitude, unsigned long val, char *buf)
 
   left = val / 100000;
   right = (val - left * 100000) / 10;
-  if (is_latitude) {
+  if (is_latitude)
+  {
     sprintf_P(buf, PSTR("%04ld.%04ld"), left, right);
-  } else {
+  }
+  else
+  {
     sprintf_P(buf, PSTR("%05ld.%04ld"), left, right);
   }
 }
@@ -627,14 +655,17 @@ float get_wgs84_coordinate(unsigned long val)
 }
 
 /* render measurement in big digit on display */
-void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm, int offset)
+void render_measurement(unsigned long value5sec, unsigned long value, bool is_cpm, int offset)
 {
   display.setCursor(0, 0);
   display.set2X();
-  if (VOID == geiger_status) {
-//    display.setTextColor(BLACK, WHITE); // 'inverted' text
-  } else {
-//    display.setTextColor(WHITE);
+  if (VOID == geiger_status)
+  {
+    //    display.setTextColor(BLACK, WHITE); // 'inverted' text
+  }
+  else
+  {
+    //    display.setTextColor(WHITE);
   }
 
   // Cleanup temp buffer
@@ -642,58 +673,74 @@ void render_measurement(unsigned long value5sec,unsigned long value, bool is_cpm
 
   // display in CPM
 
+  // display 5 second fast update mode if function key is pressed
+  if (digitalRead(CUSTOM_FN_PIN) == LOW)
+  {
+    value = (value5sec * 12); // display 5 seconds data on display
+  }
+  else
+  {
+  }
 
-      // display 5 second fast update mode if function key is pressed  
-      if (digitalRead(CUSTOM_FN_PIN)==LOW) {
-          value= (value5sec*12); // display 5 seconds data on display
-          } else {
-      }
-
-  
-  if (is_cpm) {
-    if (value >= 10000) {
+  if (is_cpm)
+  {
+    if (value >= 10000)
+    {
       dtostrf((float)(value / 1000.0), 4, 3, strbuffer);
-      strncpy (strbuffer1, strbuffer, 4);
-      if (strbuffer1[strlen(strbuffer1) - 1] == '.') {
+      strncpy(strbuffer1, strbuffer, 4);
+      if (strbuffer1[strlen(strbuffer1) - 1] == '.')
+      {
         strbuffer1[strlen(strbuffer1) - 1] = 0;
       }
       display.print(strbuffer1);
       display.set1X();
       sprintf_P(strbuffer, PSTR("kCPM"));
       display.print(strbuffer);
-    } else {
+    }
+    else
+    {
       dtostrf((float)value, 0, 0, strbuffer);
       display.print(strbuffer);
       display.set1X();
       sprintf_P(strbuffer, PSTR(" CPM"));
       display.print(strbuffer);
     }
-  } else {
+  }
+  else
+  {
     // display in Sievert/h
-    if ((value / config.cpm_factor) >= 1000) {
+    if ((value / config.cpm_factor) >= 1000)
+    {
       dtostrf((float)(value / config.cpm_factor / 1000.0), 4, 2, strbuffer);
-      strncpy (strbuffer1, strbuffer, 5);
-      if (strbuffer1[strlen(strbuffer1) - 1] == '.') {
+      strncpy(strbuffer1, strbuffer, 5);
+      if (strbuffer1[strlen(strbuffer1) - 1] == '.')
+      {
         strbuffer1[strlen(strbuffer1) - 1] = 0;
       }
       display.print(strbuffer1);
       display.set1X();
       sprintf_P(strbuffer, PSTR(" mS/h"));
       display.print(strbuffer);
-    } else if ((value / config.cpm_factor) >= 10) {
+    }
+    else if ((value / config.cpm_factor) >= 10)
+    {
       dtostrf((float)(value / config.cpm_factor / 1.0), 4, 2, strbuffer);
-      strncpy (strbuffer1, strbuffer, 5);
-      if (strbuffer1[strlen(strbuffer1) - 1] == '.') {
+      strncpy(strbuffer1, strbuffer, 5);
+      if (strbuffer1[strlen(strbuffer1) - 1] == '.')
+      {
         strbuffer1[strlen(strbuffer1) - 1] = 0;
       }
       display.print(strbuffer1);
       display.set1X();
       sprintf_P(strbuffer, PSTR(" uS/h"));
       display.print(strbuffer);
-    } else {
+    }
+    else
+    {
       dtostrf((float)(value / config.cpm_factor / 1.0), 4, 3, strbuffer);
-      strncpy (strbuffer1, strbuffer, 6);
-      if (strbuffer1[strlen(strbuffer1) - 1] == '.') {
+      strncpy(strbuffer1, strbuffer, 6);
+      if (strbuffer1[strlen(strbuffer1) - 1] == '.')
+      {
         strbuffer1[strlen(strbuffer1) - 1] = 0;
       }
       display.print(strbuffer1);
@@ -724,15 +771,19 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // get GPS date
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
-  if (TinyGPS::GPS_INVALID_AGE == age) {
+  if (TinyGPS::GPS_INVALID_AGE == age)
+  {
     year = 2012, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
   }
 
   // get GPS position, altitude and speed
   gps.get_position(&x, &y, &age);
-  if (!gps.status()) {
+  if (!gps.status())
+  {
     gps_status = VOID;
-  } else {
+  }
+  else
+  {
     gps_status = AVAILABLE;
   }
   faltitude = gps.f_altitude();
@@ -740,8 +791,16 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   nbsat = gps.satellites();
   precission = gps.hdop();
 
-  if (x < 0) { NS = 'S'; x = -x;}
-  if (y < 0) { WE = 'W'; y = -y;}
+  if (x < 0)
+  {
+    NS = 'S';
+    x = -x;
+  }
+  if (y < 0)
+  {
+    WE = 'W';
+    y = -y;
+  }
   get_coordinate_string(true, x == TinyGPS::GPS_INVALID_ANGLE ? 0 : x, lat);
   get_coordinate_string(false, y == TinyGPS::GPS_INVALID_ANGLE ? 0 : y, lon);
   dtostrf(faltitude == TinyGPS::GPS_INVALID_F_ALTITUDE ? 0.0 : faltitude, 0, 2, strbuffer);
@@ -752,20 +811,20 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // prepare the log entry
   memset(buf, 0, LINE_SZ);
-  sprintf_P(buf, PSTR("$%s,%04d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%d,%ld"),  \
-            NANO_HEADER, \
-            config.device_id, \
-            year, month, day,  \
-            hour, minute, second, \
-            cpm, \
-            cpb, \
-            total_count, \
-            geiger_status, \
-            lat, NS, \
-            lon, WE, \
-            strbuffer, \
-            gps_status, \
-            nbsat  == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat, \
+  sprintf_P(buf, PSTR("$%s,%04d,%02d-%02d-%02dT%02d:%02d:%02dZ,%ld,%ld,%ld,%c,%s,%c,%s,%c,%s,%c,%d,%ld"),
+            NANO_HEADER,
+            config.device_id,
+            year, month, day,
+            hour, minute, second,
+            cpm,
+            cpb,
+            total_count,
+            geiger_status,
+            lat, NS,
+            lon, WE,
+            strbuffer,
+            gps_status,
+            nbsat == TinyGPS::GPS_INVALID_SATELLITES ? 0 : nbsat,
             precission == TinyGPS::GPS_INVALID_HDOP ? 0 : precission);
 
   len = strlen(buf);
@@ -782,7 +841,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
 #if ENABLE_SSD1306
   // compute distance
-  if (gps.status()) {
+  if (gps.status())
+  {
     int trigger_dist = 25;
     float flat = get_wgs84_coordinate(x);
     float flon = get_wgs84_coordinate(y);
@@ -816,11 +876,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   }
 
   // ready to display the data on screen
-//  display.clearDisplay();
+  //  display.clearDisplay();
   display.clear();
   int offset = 0;
 
-if (config.type == GEIGIE_TYPE_B) {
+  if (config.type == GEIGIE_TYPE_B)
+  {
     // **********************************************************************
     // bGeigie mode
     // **********************************************************************
@@ -833,54 +894,70 @@ if (config.type == GEIGIE_TYPE_B) {
     // display.setTextColor(WHITE);
     display.println(strbuffer);
 
-        //Display Alarm LED if GPS is locked and Radiation is valid
-    #ifdef LOGALARM_LED_PIN
-        if ((geiger_status == AVAILABLE) && (gps.status())) {
-          if (openlog_ready) {
-            digitalWrite(LOGALARM_LED_PIN, HIGH);
-          } else {
-            digitalWrite(LOGALARM_LED_PIN, LOW);
-          }
-        } else {
-          digitalWrite(LOGALARM_LED_PIN, LOW);
-        }
-    #endif
+    //Display Alarm LED if GPS is locked and Radiation is valid
+#ifdef LOGALARM_LED_PIN
+    if ((geiger_status == AVAILABLE) && (gps.status()))
+    {
+      if (openlog_ready)
+      {
+        digitalWrite(LOGALARM_LED_PIN, HIGH);
+      }
+      else
+      {
+        digitalWrite(LOGALARM_LED_PIN, LOW);
+      }
+    }
+    else
+    {
+      digitalWrite(LOGALARM_LED_PIN, LOW);
+    }
+#endif
 
     // Display CPM (with deadtime compensation)
     render_measurement(cpb, cpm, true, offset);
 
     // Display SD, GPS and Geiger states
     display.set1X();
-    if (!gps.status()) {
+    if (!gps.status())
+    {
       display.setCursor(92, 1);
       sprintf_P(strbuffer, PSTR("No GPS"));
       display.println(strbuffer);
-    } else {
+    }
+    else
+    {
       display.setCursor(110, 1);
       sprintf(strbuffer, "%2d", nbsat);
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("^"));
       display.println(strbuffer);
-
     }
 
     // Display uSv/h
     // display.setCursor(0, offset+16); // textsize*8
     display.setCursor(0, 2); // textsize*8
-    if (config.mode == GEIGIE_MODE_USVH) {
-      if (digitalRead(CUSTOM_FN_PIN)==LOW) {
-        dtostrf((float)(cpb/config.cpm_factor*12), 0, 3, strbuffer);
-        } else {
-        dtostrf((float)(cpm/config.cpm_factor), 0, 3, strbuffer);
+    if (config.mode == GEIGIE_MODE_USVH)
+    {
+      if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      {
+        dtostrf((float)(cpb / config.cpm_factor * 12), 0, 3, strbuffer);
+      }
+      else
+      {
+        dtostrf((float)(cpm / config.cpm_factor), 0, 3, strbuffer);
       }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
       display.println(strbuffer);
     }
-    else if (config.mode == GEIGIE_MODE_BQM2) {
-      if (digitalRead(CUSTOM_FN_PIN)==LOW) {
-        dtostrf((float)(cpb* config.bqm_factor*12), 0, 3, strbuffer);
-      } else {
+    else if (config.mode == GEIGIE_MODE_BQM2)
+    {
+      if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      {
+        dtostrf((float)(cpb * config.bqm_factor * 12), 0, 3, strbuffer);
+      }
+      else
+      {
         dtostrf((float)(cpm * config.bqm_factor), 0, 3, strbuffer);
       }
 
@@ -889,7 +966,8 @@ if (config.type == GEIGIE_TYPE_B) {
       display.println(strbuffer);
     }
 
-    if (toggle) {
+    if (toggle)
+    {
       // Display distance
       dtostrf((float)(gps_distance / 1000.0), 0, 1, strbuffer);
       // display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
@@ -897,11 +975,16 @@ if (config.type == GEIGIE_TYPE_B) {
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR("km"));
       display.println(strbuffer);
-    } else {
+    }
+    else
+    {
       // Display altidude
-      if (gps.status()) {
+      if (gps.status())
+      {
         dtostrf(faltitude, 0, 0, strbuffer);
-      } else {
+      }
+      else
+      {
         sprintf_P(strbuffer, PSTR("--"));
       }
       display.setCursor(122 - (strlen(strbuffer) * 6), 3); // textsize*8
@@ -909,15 +992,19 @@ if (config.type == GEIGIE_TYPE_B) {
       display.println("m");
     }
   }
-  else if (config.type == GEIGIE_TYPE_X) {
+  else if (config.type == GEIGIE_TYPE_X)
+  {
     // **********************************************************************
     // xGeigie mode
     // **********************************************************************
     // LED Log/alarm set for alarm
     digitalWrite(LOGALARM_LED_PIN, LOW);
-    if (cpm > config.alarm_level) {
+    if (cpm > config.alarm_level)
+    {
       digitalWrite(LOGALARM_LED_PIN, HIGH);
-    } else {
+    }
+    else
+    {
       digitalWrite(LOGALARM_LED_PIN, LOW);
     }
 
@@ -929,29 +1016,43 @@ if (config.type == GEIGIE_TYPE_B) {
 
     display.setCursor(0, 2);
     display.set1X();
-    if (toggle) {
+    if (toggle)
+    {
       int battery = ((read_voltage(VOLTAGE_PIN) - 30));
-      if (battery < 1) {
+      if (battery < 1)
+      {
         display.print("BATTERY LOW.NO LOGGER");
-      } else {
+      }
+      else
+      {
         // Display CPM
-        if (cpm > 1000) {
-          if (digitalRead(CUSTOM_FN_PIN)==LOW){
-            dtostrf((float)(cpb/1000.00*12), 0, 1, strbuffer);
-          }else{
-            dtostrf((float)(cpm/1000.00), 0, 1, strbuffer);
+        if (cpm > 1000)
+        {
+          if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          {
+            dtostrf((float)(cpb / 1000.00 * 12), 0, 1, strbuffer);
           }
-          strncpy (strbuffer1, strbuffer, 5);
-          if (strbuffer1[strlen(strbuffer1) - 1] == '.') {
+          else
+          {
+            dtostrf((float)(cpm / 1000.00), 0, 1, strbuffer);
+          }
+          strncpy(strbuffer1, strbuffer, 5);
+          if (strbuffer1[strlen(strbuffer1) - 1] == '.')
+          {
             strbuffer1[strlen(strbuffer1) - 1] = 0;
           }
           display.print(strbuffer1);
           sprintf_P(strbuffer, PSTR("kCPM "));
           display.print(strbuffer);
-        } else {
-          if (digitalRead(CUSTOM_FN_PIN)==LOW){
-            dtostrf((float)cpb*12, 0, 0, strbuffer);
-          }else{
+        }
+        else
+        {
+          if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          {
+            dtostrf((float)cpb * 12, 0, 0, strbuffer);
+          }
+          else
+          {
             dtostrf((float)cpm, 0, 0, strbuffer);
           }
           dtostrf((float)cpm, 0, 0, strbuffer);
@@ -961,21 +1062,26 @@ if (config.type == GEIGIE_TYPE_B) {
         }
 
         // Display bq/m2
-        if ((cpm * config.bqm_factor) > 1000000) {
+        if ((cpm * config.bqm_factor) > 1000000)
+        {
           dtostrf((float)(cpm * config.bqm_factor / 1000000.0), 0, 1, strbuffer);
-          strncpy (strbuffer1, strbuffer, 5);
+          strncpy(strbuffer1, strbuffer, 5);
           display.print(strbuffer1);
           sprintf_P(strbuffer, PSTR("mBq/m2"));
           display.print(strbuffer);
-
-        } else {
-          if ((cpm * config.bqm_factor) > 10000) {
+        }
+        else
+        {
+          if ((cpm * config.bqm_factor) > 10000)
+          {
             dtostrf((float)(cpm * config.bqm_factor / 1000.0), 0, 0, strbuffer);
-            strncpy (strbuffer1, strbuffer, 5);
+            strncpy(strbuffer1, strbuffer, 5);
             display.print(strbuffer1);
             sprintf_P(strbuffer, PSTR("kBq/m2"));
             display.print(strbuffer);
-          } else {
+          }
+          else
+          {
             dtostrf((float)(cpm * config.bqm_factor), 0, 0, strbuffer);
             display.print(strbuffer);
             sprintf_P(strbuffer, PSTR("Bq/m2"));
@@ -983,11 +1089,16 @@ if (config.type == GEIGIE_TYPE_B) {
           }
         }
       }
-    } else {
+    }
+    else
+    {
       int battery = ((read_voltage(VOLTAGE_PIN) - 30));
-      if (battery < 1 ) {
+      if (battery < 1)
+      {
         display.print("BATTERY LOW.NO LOGGER");
-      } else {
+      }
+      else
+      {
         // Total dose and max count
         sprintf_P(strbuffer, PSTR("Mx="));
         display.print(strbuffer);
@@ -997,31 +1108,35 @@ if (config.type == GEIGIE_TYPE_B) {
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("Ds="));
         display.print(strbuffer);
-        dtostrf((float)( ((dose.total_count / (dose.total_time / 60.0)) / config.cpm_factor) * (dose.total_time / 3600.0) ), 0, 0, strbuffer);
+        dtostrf((float)(((dose.total_count / (dose.total_time / 60.0)) / config.cpm_factor) * (dose.total_time / 3600.0)), 0, 0, strbuffer);
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("uS"));
         display.print(strbuffer);
       }
     }
-  } else {
+  }
+  else
+  {
     // Wrong mode
     display.setCursor(0, 5);
     sprintf_P(strbuffer, PSTR("Wrong mode !"));
     display.print(strbuffer);
   }
 
-
   // **********************************************************************
   // Common display parts
   // **********************************************************************
-  if (openlog_ready) {
+  if (openlog_ready)
+  {
     // Display date
-    sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),  \
-              day, month, \
+    sprintf_P(strbuffer, PSTR("%02d/%02d %02d:%02d:%02d"),
+              day, month,
               hour, minute, second);
     display.setCursor(0, 3); // textsize*8
     display.println(strbuffer);
-  } else {
+  }
+  else
+  {
     display.setCursor(0, 3); // textsize*8
     sprintf_P(strbuffer, PSTR("NO SD CARD/ GPS reset"));
     display.print(strbuffer);
@@ -1033,54 +1148,52 @@ if (config.type == GEIGIE_TYPE_B) {
     gpsSerial.println(line);
   }
 
-
   //display  hotspot mode also used for shock detect display
-  shock_happend=interruptShockTrue();
+  shock_happend = interruptShockTrue();
   display.setCursor(92, 0);
-  if(!shock_happend){
-    display.print((digitalRead(CUSTOM_FN_PIN)==LOW) ? " 5s" : "60s");
-    }else{
-      display.print("SH");
-      shock_happend=!shock_happend;
+  if (!shock_happend)
+  {
+    display.print((digitalRead(CUSTOM_FN_PIN) == LOW) ? " 5s" : "60s");
   }
- 
-  //
+  else
+  {
+    display.print("SH");
+    shock_happend = !shock_happend;
+  }
 
+  //
 
   // Display battery indicator
   // Range = [3.5v to 4.3v]
   display.setCursor(112, 0);
   int battery = ((read_voltage(VOLTAGE_PIN) - 30) * 15);
   battery = (battery + 20);
-  if (battery < 0) battery = 1;
-  if (battery > 99) battery = 99;
+  if (battery < 0)
+    battery = 1;
+  if (battery > 99)
+    battery = 99;
   sprintf_P(strbuffer, PSTR("%02d"), battery);
   display.print(strbuffer);
   display.print("%");
 
-
-// Display Latitude and Longitude
-  sprintf_P(strbuffer, PSTR("LAT:%s,%c"),  \
+  // Display Latitude and Longitude
+  sprintf_P(strbuffer, PSTR("LAT:%s,%c"),
             lat, NS);
   display.setCursor(0, 4); // textsize*8
-//      display.setTextSize(1);
-//      display.setTextColor(WHITE);
+                           //      display.setTextSize(1);
+                           //      display.setTextColor(WHITE);
   display.println(strbuffer);
 
-  sprintf_P(strbuffer, PSTR("LON:%s,%c"),  \
+  sprintf_P(strbuffer, PSTR("LON:%s,%c"),
             lon, WE);
   display.setCursor(0, 5); // textsize*8
-//      display.setTextSize(1);
-//      display.setTextColor(WHITE);
+                           //      display.setTextSize(1);
+                           //      display.setTextColor(WHITE);
   display.println(strbuffer);
-
 
   display.setCursor(50, 7);
   display.print("Safecast 2021");
-//       display.display();
-
-
-
+  //       display.display();
 
 #endif
 
@@ -1116,11 +1229,11 @@ void gps_program_settings()
   // "Binary Messages Of SkyTraq Venus 6 GPS Receiver"
 
   // set GGA and RMC output at 1Hz
-  uint8_t GPS_MSG_OUTPUT_GGARMC_1S[9] = { 0x08, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01 }; // with update to RAM and FLASH
+  uint8_t GPS_MSG_OUTPUT_GGARMC_1S[9] = {0x08, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01}; // with update to RAM and FLASH
   uint16_t GPS_MSG_OUTPUT_GGARMC_1S_L = 9;
 
   // Power Save mode (not sure what it is doing at the moment
-  uint8_t GPS_MSG_PWR_SAVE[3] = { 0x0C, 0x01, 0x01 }; // update to FLASH too
+  uint8_t GPS_MSG_PWR_SAVE[3] = {0x0C, 0x01, 0x01}; // update to FLASH too
   uint16_t GPS_MSG_PWR_SAVE_L = 3;
 
   // wait for GPS to start
@@ -1143,7 +1256,7 @@ void gps_send_message(const uint8_t *msg, uint16_t len)
   gpsSerial.write(len >> 8);
   gpsSerial.write(len & 0xff);
   // send message
-  for (unsigned int i = 0 ; i < len ; i++)
+  for (unsigned int i = 0; i < len; i++)
   {
     gpsSerial.write(msg[i]);
     chk ^= msg[i];
@@ -1162,10 +1275,8 @@ float read_voltage(int pin)
   static float voltage_divider = (float)VOLTAGE_R2 / (VOLTAGE_R1 + VOLTAGE_R2);
   float result = (float)analogRead(pin) / 1024 * 10 / voltage_divider;
 
-
   return result;
 }
-
 
 #if ENABLE_100M_TRUNCATION
 /*
@@ -1186,44 +1297,33 @@ void truncate_100m(char *latitude, char *longitude)
 
   /* latitude */
   // get minutes in one long int
-  minutes = (unsigned long)(latitude[2]-'0')*100000
-    + (unsigned long)(latitude[3]-'0')*10000
-    + (unsigned long)(latitude[5]-'0')*1000
-    + (unsigned long)(latitude[6]-'0')*100
-    + (unsigned long)(latitude[7]-'0')*10
-    + (unsigned long)(latitude[8]-'0');
+  minutes = (unsigned long)(latitude[2] - '0') * 100000 + (unsigned long)(latitude[3] - '0') * 10000 + (unsigned long)(latitude[5] - '0') * 1000 + (unsigned long)(latitude[6] - '0') * 100 + (unsigned long)(latitude[7] - '0') * 10 + (unsigned long)(latitude[8] - '0');
   // truncate, for latutude, truncation factor is fixed
   minutes -= minutes % 546;
   // get this back in the string
-  latitude[2] = '0' + (minutes/100000);
-  latitude[3] = '0' + ((minutes%100000)/10000);
-  latitude[5] = '0' + ((minutes%10000)/1000);
-  latitude[6] = '0' + ((minutes%1000)/100);
-  latitude[7] = '0' + ((minutes%100)/10);
-  latitude[8] = '0' + (minutes%10);
+  latitude[2] = '0' + (minutes / 100000);
+  latitude[3] = '0' + ((minutes % 100000) / 10000);
+  latitude[5] = '0' + ((minutes % 10000) / 1000);
+  latitude[6] = '0' + ((minutes % 1000) / 100);
+  latitude[7] = '0' + ((minutes % 100) / 10);
+  latitude[8] = '0' + (minutes % 10);
 
   // compute the full latitude in radian
-  latitude0 = ((float)(latitude[0]-'0')*10 + (latitude[1]-'0') + (float)minutes/600000.f)/180.*M_PI;
+  latitude0 = ((float)(latitude[0] - '0') * 10 + (latitude[1] - '0') + (float)minutes / 600000.f) / 180. * M_PI;
 
   /* longitude */
   // get minutes in one long int
-  minutes = (unsigned long)(longitude[3]-'0')*100000
-    + (unsigned long)(longitude[4]-'0')*10000
-    + (unsigned long)(longitude[6]-'0')*1000
-    + (unsigned long)(longitude[7]-'0')*100
-    + (unsigned long)(longitude[8]-'0')*10
-    + (unsigned long)(longitude[9]-'0');
+  minutes = (unsigned long)(longitude[3] - '0') * 100000 + (unsigned long)(longitude[4] - '0') * 10000 + (unsigned long)(longitude[6] - '0') * 1000 + (unsigned long)(longitude[7] - '0') * 100 + (unsigned long)(longitude[8] - '0') * 10 + (unsigned long)(longitude[9] - '0');
   // compute truncation factor
-  longitude_trunc = (unsigned int)((0.0545674090600784/cos(latitude0))*10000.);
+  longitude_trunc = (unsigned int)((0.0545674090600784 / cos(latitude0)) * 10000.);
   // truncate
   minutes -= minutes % longitude_trunc;
   // get this back in the string
-  longitude[3] = '0' + (minutes/100000);
-  longitude[4] = '0' + ((minutes%100000)/10000);
-  longitude[6] = '0' + ((minutes%10000)/1000);
-  longitude[7] = '0' + ((minutes%1000)/100);
-  longitude[8] = '0' + ((minutes%100)/10);
-  longitude[9] = '0' + (minutes%10);
-
+  longitude[3] = '0' + (minutes / 100000);
+  longitude[4] = '0' + ((minutes % 100000) / 10000);
+  longitude[6] = '0' + ((minutes % 10000) / 1000);
+  longitude[7] = '0' + ((minutes % 1000) / 100);
+  longitude[8] = '0' + ((minutes % 100) / 10);
+  longitude[9] = '0' + (minutes % 10);
 }
 #endif /* JAPAN_POST */
