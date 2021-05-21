@@ -676,7 +676,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
   // display in CPM
 
   // display 5 second fast update mode if function key is pressed
-  if (digitalRead(CUSTOM_FN_PIN) == LOW)
+  if (digitalRead(CUSTOM_FN_PIN) == HIGH)
   {
     value = (value5sec * 12); // display 5 seconds data on display
   }
@@ -940,7 +940,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, 2); // textsize*8
     if (config.mode == GEIGIE_MODE_USVH)
     {
-      if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      if (digitalRead(CUSTOM_FN_PIN) == HIGH)
       {
         dtostrf((float)(cpb / config.cpm_factor * 12), 0, 3, strbuffer);
       }
@@ -954,7 +954,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     }
     else if (config.mode == GEIGIE_MODE_BQM2)
     {
-      if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      if (digitalRead(CUSTOM_FN_PIN) == HIGH)
       {
         dtostrf((float)(cpb * config.bqm_factor * 12), 0, 3, strbuffer);
       }
@@ -1030,7 +1030,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Display CPM
         if (cpm > 1000)
         {
-          if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          if (digitalRead(CUSTOM_FN_PIN) == HIGH)
           {
             dtostrf((float)(cpb / 1000.00 * 12), 0, 1, strbuffer);
           }
@@ -1049,7 +1049,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         }
         else
         {
-          if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          if (digitalRead(CUSTOM_FN_PIN) == HIGH)
           {
             dtostrf((float)cpb * 12, 0, 0, strbuffer);
           }
@@ -1158,7 +1158,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.setCursor(92, 0);
   if (!shock_happend)
   {
-    display.print((digitalRead(CUSTOM_FN_PIN) == LOW) ? " 5s" : "60s");
+    display.print((digitalRead(CUSTOM_FN_PIN) == HIGH) ? " 5s" : "60s");
   }
   else
   {
