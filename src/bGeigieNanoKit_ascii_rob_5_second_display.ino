@@ -53,6 +53,7 @@
 */
 #include <limits.h>
 #include <SoftwareSerial.h>
+// #include "SoftwareSerial.h"
 #include <math.h>
 #include <stdlib.h>
 #include <avr/wdt.h>
@@ -105,6 +106,7 @@ int str_count = 0;
 int maxLength_over_k = 3;
 char geiger_status = VOID;
 bool shock_happend = false;
+unsigned long shocks = 0;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
@@ -1149,7 +1151,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   }
 
   //display  hotspot mode also used for shock detect display
-  shock_happend = interruptShockTrue();
+  shocks = interruptShockTrue();
+  if(shocks>0) {
+    shock_happend=true;
+  }
   display.setCursor(92, 0);
   if (!shock_happend)
   {
@@ -1157,8 +1162,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   }
   else
   {
-    display.print("SH");
-    shock_happend = !shock_happend;
+    display.print("S");
+    display.print(shocks);
+    //shock_happend = !shock_happend;
   }
 
   //

@@ -103,12 +103,12 @@
 // 0 = D2, 1 = D3
 #define INTERRUPT_COUNTER_PIN 0
 
-// for detecting shock if shock sensor is connected
-#define SHOCKPIN A1 
+// for detecting shock if shock sensor is connected on D3 interupt 1
+#define SHOCKPIN 1
 
 // bGeigie <-> xGeigie switch pin
 //Rob and Pieter versions with old board are A7 normal is A5
-#define GEIGIE_TYPE_PIN A6
+#define GEIGIE_TYPE_PIN A7
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider

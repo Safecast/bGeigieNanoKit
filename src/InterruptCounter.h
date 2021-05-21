@@ -45,7 +45,7 @@ void interruptShockSetup(int interrupt_pin, unsigned long delay);
 void interruptCounterReset();
 int interruptCounterAvailable();
 unsigned long interruptCounterCount();
-bool interruptShockTrue();
+unsigned long interruptShockTrue();
 
 #endif /* INTERRUPTCOUNTER_H */
 

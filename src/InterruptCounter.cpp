@@ -30,12 +30,14 @@
 
 #include "InterruptCounter.h"
 #include <limits.h>
+#include <PinChangeInterrupt.h>
 
 // Declare variables here
 int _interrupt_pin;
 unsigned long _start_time;
 unsigned long _delay;
 unsigned long _count;
+unsigned long _shocks;
 bool _shock_happend;
 
 // private methods here
@@ -45,12 +47,13 @@ void interrupt_routine();
 void shock(){
   // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
   _shock_happend = true;
+  _shocks++;
 }
 
 // return current number of counts
-bool interruptShockTrue()
+unsigned long interruptShockTrue()
 {
-  return _shock_happend;
+  return _shocks;
 }
 
 
@@ -68,9 +71,7 @@ void interruptCounterSetup(int interrupt_pin, unsigned long delay)
 void interruptShockSetup(int interrupt_pin, unsigned long delay)
 {
   _interrupt_pin = interrupt_pin;
-  attachInterrupt(_interrupt_pin, shock, FALLING);
-  pinMode(_interrupt_pin, INPUT_PULLUP);
-
+  attachInterrupt(_interrupt_pin, shock, RISING);// 0 = D2, 1 = D3 can only be used with software serial.
 }
 
 // call this to start the counter
