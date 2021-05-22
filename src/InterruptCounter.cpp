@@ -83,6 +83,12 @@ void interruptCounterReset()
   _count = 0;
 }
 
+// reset shock sensor state
+void interruptShockReset()
+{
+_shock_happend = false;
+}
+
 // This indicates when the count over the determined period is over
 int interruptCounterAvailable()
 {

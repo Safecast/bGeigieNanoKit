@@ -43,6 +43,7 @@
 void interruptCounterSetup(int interrupt_pin, unsigned long delay);
 void interruptShockSetup(int interrupt_pin, unsigned long delay);
 void interruptCounterReset();
+void interruptShockReset();
 int interruptCounterAvailable();
 unsigned long interruptCounterCount();
 unsigned long interruptShockTrue();
