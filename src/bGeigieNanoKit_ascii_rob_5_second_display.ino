@@ -107,6 +107,8 @@ int maxLength_over_k = 3;
 char geiger_status = VOID;
 bool shock_happend = false;
 unsigned long shocks = 0;
+unsigned long dimtime = 300000;
+unsigned long current_dimtime = 0;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
@@ -1150,24 +1152,22 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     gpsSerial.println(line);
   }
 
-  //display  hotspot mode also used for shock detect display
-  shocks = interruptShockTrue();
-  if(shocks>0) {
-    shock_happend=true;
+  //display hotspot mode also used for shock detect display
+  shock_happend = interruptShockTrue();
+  if (shock_happend){
+    current_dimtime=millis();
   }
+
   display.setCursor(92, 0);
-  if (!shock_happend)
-  {
-    display.print((digitalRead(CUSTOM_FN_PIN) == HIGH) ? " 5s" : "60s");
+  current_dimtime=millis();
+  if(shock_happend&(current_dimtime - dimtime < 0)){
+      display.print("S");
   }
   else
   {
-    display.print("S");
-    display.print(shocks);
-    //shock_happend = !shock_happend;
+    display.print((digitalRead(CUSTOM_FN_PIN) == HIGH) ? " 5s" : "60s");
   }
 
-  //
 
   // Display battery indicator
   // Range = [3.5v to 4.3v]

@@ -47,13 +47,13 @@ void interrupt_routine();
 void shock(){
   // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
   _shock_happend = true;
-  _shocks++;
+  // _shocks++;
 }
 
 // return current number of counts
 unsigned long interruptShockTrue()
 {
-  return _shocks;
+  return _shock_happend;
 }
 
 
