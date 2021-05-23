@@ -109,7 +109,7 @@ int maxLength_over_k = 3;
 char geiger_status = VOID;
 bool shock_happend = true;
 unsigned long shocks = 0;
-unsigned long dimtime = 6000;
+unsigned long dimtime = 120000;
 unsigned long current_dimtime = 0;
 unsigned long  shock_dimtime = 0;
 
@@ -881,7 +881,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // ready to display the data on screen
   //  display.clearDisplay();
-  // display.clear();
+  display.clear();
   int offset = 0;
 
   if (config.type == GEIGIE_TYPE_B)
@@ -1156,13 +1156,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   if (shock_happend){
     shock_dimtime=millis();
+    display.ssd1306WriteCmd(SSD1306_DISPLAYON);
     shock_happend=!shock_happend;
     interruptShockReset();
   }
 
   display.setCursor(92, 0);
-  current_dimtime=millis();
-  if(current_dimtime-dimtime<shock_dimtime){
+  unsigned long current_dimtime=millis();
+  if(current_dimtime-shock_dimtime < dimtime){
     display.ssd1306WriteCmd(SSD1306_DISPLAYON);
     display.print("60s  ");
     display.setContrast (254);
