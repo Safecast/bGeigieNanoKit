@@ -107,9 +107,9 @@ int upminute = 0;
 int str_count = 0;
 int maxLength_over_k = 3;
 char geiger_status = VOID;
-bool shock_happend = false;
+bool shock_happend = true;
 unsigned long shocks = 0;
-unsigned long dimtime = 60000;
+unsigned long dimtime = 6000;
 unsigned long current_dimtime = 0;
 unsigned long  shock_dimtime = 0;
 
@@ -283,26 +283,22 @@ void setup()
   display.setCursor(50, 7);
   display.print("Safecast 2021");
 
-  delay(5000);
+  delay(2000);
   display.clear();
+  shock_happend=true;
+  display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+
 }
 
 // ****************************************************************************
 // Main loop
 // ****************************************************************************
 void loop()
-{
-  // code for display dimming
-  if (shock_on)
-  {
-    display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-  }
-  else
-  {
-    display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
-  }
 
+{
   bool gpsReady = false;
+
+  shock_happend = interruptShockTrue();
 
 #if ENABLE_GEIGIE_SWITCH
   // Check geigie mode switch
@@ -682,13 +678,13 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
   // display in CPM
 
   // display 5 second fast update mode if function key is pressed
-  if (digitalRead(CUSTOM_FN_PIN) == HIGH)
-  {
-    value = (value5sec * 12); // display 5 seconds data on display
-  }
-  else
-  {
-  }
+  // if (digitalRead(CUSTOM_FN_PIN) == LOW)
+  // {
+  //   value = (value5sec * 12); // display 5 seconds data on display
+  // }
+  // else
+  // {
+  // }
 
   if (is_cpm)
   {
@@ -885,7 +881,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
   // ready to display the data on screen
   //  display.clearDisplay();
-  display.clear();
+  // display.clear();
   int offset = 0;
 
   if (config.type == GEIGIE_TYPE_B)
@@ -946,28 +942,28 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     display.setCursor(0, 2); // textsize*8
     if (config.mode == GEIGIE_MODE_USVH)
     {
-      if (digitalRead(CUSTOM_FN_PIN) == HIGH)
-      {
-        dtostrf((float)(cpb / config.cpm_factor * 12), 0, 3, strbuffer);
-      }
-      else
-      {
+      // if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      // {
+      //   dtostrf((float)(cpb / config.cpm_factor * 12), 0, 3, strbuffer);
+      // }
+      // else
+      // {
         dtostrf((float)(cpm / config.cpm_factor), 0, 3, strbuffer);
-      }
+      // }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
       display.println(strbuffer);
     }
     else if (config.mode == GEIGIE_MODE_BQM2)
     {
-      if (digitalRead(CUSTOM_FN_PIN) == HIGH)
-      {
-        dtostrf((float)(cpb * config.bqm_factor * 12), 0, 3, strbuffer);
-      }
-      else
-      {
+      // if (digitalRead(CUSTOM_FN_PIN) == LOW)
+      // {
+      //   dtostrf((float)(cpb * config.bqm_factor * 12), 0, 3, strbuffer);
+      // }
+      // else
+      // {
         dtostrf((float)(cpm * config.bqm_factor), 0, 3, strbuffer);
-      }
+      // }
 
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" Bq/m2"));
@@ -1036,14 +1032,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Display CPM
         if (cpm > 1000)
         {
-          if (digitalRead(CUSTOM_FN_PIN) == HIGH)
-          {
-            dtostrf((float)(cpb / 1000.00 * 12), 0, 1, strbuffer);
-          }
-          else
-          {
+          // if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          // {
+          //   dtostrf((float)(cpb / 1000.00 * 12), 0, 1, strbuffer);
+          // }
+          // else
+          // {
             dtostrf((float)(cpm / 1000.00), 0, 1, strbuffer);
-          }
+          // }
           strncpy(strbuffer1, strbuffer, 5);
           if (strbuffer1[strlen(strbuffer1) - 1] == '.')
           {
@@ -1055,14 +1051,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         }
         else
         {
-          if (digitalRead(CUSTOM_FN_PIN) == HIGH)
-          {
-            dtostrf((float)cpb * 12, 0, 0, strbuffer);
-          }
-          else
-          {
+          // if (digitalRead(CUSTOM_FN_PIN) == LOW)
+          // {
+          //   dtostrf((float)cpb * 12, 0, 0, strbuffer);
+          // }
+          // else
+          // {
             dtostrf((float)cpm, 0, 0, strbuffer);
-          }
+          // }
           dtostrf((float)cpm, 0, 0, strbuffer);
           display.print(strbuffer);
           sprintf_P(strbuffer, PSTR("CPM "));
@@ -1156,8 +1152,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     gpsSerial.println(line);
   }
 
-  //display hotspot mode also used for shock detect display
-  shock_happend = interruptShockTrue();
+   //display hotspot mode also used for shock detect display
+
   if (shock_happend){
     shock_dimtime=millis();
     shock_happend=!shock_happend;
@@ -1167,14 +1163,15 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.setCursor(92, 0);
   current_dimtime=millis();
   if(current_dimtime-dimtime<shock_dimtime){
-      display.print("S");
+    display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+    display.print("60s  ");
     display.setContrast (254);
   }
   else
   {
-    display.print((digitalRead(CUSTOM_FN_PIN) == HIGH) ? " 5s" : "60s");
-    display.setContrast (0);
-
+    display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+    // display.print((digitalRead(CUSTOM_FN_PIN) == HIGH) ? " 5s" : "60s");
+    // display.setContrast (0);
 
   }
 
