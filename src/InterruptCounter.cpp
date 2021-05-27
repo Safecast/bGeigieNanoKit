@@ -30,7 +30,7 @@
 
 #include "InterruptCounter.h"
 #include <limits.h>
-#include <PinChangeInterrupt.h>
+
 
 // Declare variables here
 int _interrupt_pin;
