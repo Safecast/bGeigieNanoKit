@@ -66,11 +66,11 @@ void HardwareCounter::start()
 }
 
 // call this to read the current count and save it
-unsigned int HardwareCounter::count()
+COUNTER_TYPE HardwareCounter::count()
 {
 
   TCCRnB = TCCRnB & ~7;   // Gate Off  / Counter Tn stopped
-  _count = TCNTn;         // Set the count in object variable
+  _count = (COUNTER_TYPE) TCNTn;
   TCCRnB = TCCRnB | 7;    // restart counting
   return _count;
 

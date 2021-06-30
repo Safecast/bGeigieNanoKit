@@ -52,10 +52,14 @@
 #else
 #define TCCRnA TCCR1A
 #define TCCRnB TCCR1B
-#define TCNTn  TCNT1
+#define TCNTn  TCNT1		// define counter width as COUNTER_TYPE below
 #define TIFRn  TIFR1
 #define TOVn   TOV1
 #endif
+
+// Defining the type of the TCNTn hardware counter, with the base assumption
+// that the hardware counter will wrap only after the max value of this type.
+typedef unsigned int COUNTER_TYPE;
 
 // Defining the Class for the counter
 class HardwareCounter
@@ -65,13 +69,13 @@ class HardwareCounter
     HardwareCounter(int timer_pin, long delay);
     void start();
     int available();
-    unsigned int count();
+    COUNTER_TYPE count();
 
   // privatee
   private:
     long _start_time;
     long _delay;
-    unsigned int _count;
+    COUNTER_TYPE _count;
 
 };
 
