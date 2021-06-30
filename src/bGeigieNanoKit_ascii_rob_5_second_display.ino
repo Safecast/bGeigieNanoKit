@@ -944,11 +944,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     {
       if (digitalRead(CUSTOM_FN_PIN) == LOW)
       {
-        dtostrf((float)(cpb / config.cpm_factor * 12), 0, 3, strbuffer);
-      }
-      else
-      {
-        dtostrf((float)(cpm / config.cpm_factor), 0, 3, strbuffer);
+        dtostrf(((float)cpb*NX)/config.cpm_factor, 0, 3, strbuffer);
+      }else{
+        dtostrf(((float)cpm)/config.cpm_factor, 0, 3, strbuffer);
       }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
