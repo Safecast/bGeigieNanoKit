@@ -44,7 +44,7 @@
 
 #if ENABLE_NANOKIT_PIN
 #if ENABLE_NANOPCBKIT_PIN
-  #warning NANO PCB KIT with OLED screen used !
+  // #warning NANO PCB KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
   #define OLED_CLK 10
   #define OLED_DATA 9

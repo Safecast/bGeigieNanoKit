@@ -79,7 +79,7 @@ SSD1306AsciiSoftSpi display;
 #define DEFAULT_YEAR 2013
 #define NX 12
 #define TIME_INTERVAL 5000
-#define IS_READY (1)
+// #define IS_READY (1)
 #define IS_READY (interruptCounterAvailable())
 
 // For distance computation
@@ -160,7 +160,7 @@ static void createFile(char *fileName);
 #endif
 static void gps_program_settings();
 static float read_voltage(int pin);
-static int availableMemory();
+// static int availableMemory();
 static unsigned long elapsedTime(unsigned long startTime);
 
 // Nano Settings --------------------------------------------------------------

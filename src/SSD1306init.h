@@ -201,4 +201,4 @@ static const DevType MEM_TYPE SH1106_128x64 =  {
   64,
   2    // SH1106 is a 132x64 controller.  Use middle 128 columns.
 };
-#endif SSD1306init_h
+#endif 
