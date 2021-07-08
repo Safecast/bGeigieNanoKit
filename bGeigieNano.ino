@@ -77,6 +77,7 @@ unsigned long int gps_distance = 0;
 
 // Geiger settings ------------------------------------------------------------
 #define LINE_SZ 100
+#define NEW_LINE "\r\n"
 #define BUFFER_SZ 12
 #define STRBUFFER_SZ 32
 #define AVAILABLE 'A'  // indicates geiger data are ready (available)
@@ -87,7 +88,7 @@ unsigned long int gps_distance = 0;
 
 
 // log file headers
-#define LOGFILE_HEADER "# NEW LOG\n# format="
+#define LOGFILE_HEADER "# NEW LOG" NEW_LINE "# format="
 char logfile_name[13];  // placeholder for filename
 bool logfile_ready = false;
 
@@ -155,8 +156,8 @@ static char lon[BUFFER_SZ];
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 #define PMTK_HOT_START "$PMTK101*32"
 #define PMTK_COLD_START "$PMTK104*37"
-#define SBAS_ENABLE "$PMTK313,1*2E\r\n"
-#define DGPS_WAAS_ON "$PMTK301,2*2E\r\n"
+#define SBAS_ENABLE "$PMTK313,1*2E" NEW_LINE
+#define DGPS_WAAS_ON "$PMTK301,2*2E" NEW_LINE
 
 #if ENABLE_STATIC_GPS
 #include <avr/pgmspace.h>
@@ -566,9 +567,9 @@ void loop()
            DEBUG_PRINT(strbuffer);
 
 #ifdef ENABLE_LND_DEADTIME
-           sprintf_P(strbuffer, PSTR("nano\n# deadtime=on\n"));
+           sprintf_P(strbuffer, PSTR("nano" NEW_LINE "# deadtime=on" NEW_LINE));
 #else
-           sprintf_P(strbuffer, PSTR("nano\n"));
+           sprintf_P(strbuffer, PSTR("nano" NEW_LINE));
 #endif
            OpenLog.print(strbuffer);
 
