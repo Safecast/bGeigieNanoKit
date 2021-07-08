@@ -123,6 +123,7 @@ private:
   byte _term_number;
   byte _term_offset;
   bool _gps_data_good;
+  bool _date_good;
   bool _raw_enabled;
 
 #ifndef _GPS_NO_STATS

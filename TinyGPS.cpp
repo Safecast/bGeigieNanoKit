@@ -43,6 +43,7 @@ TinyGPS::TinyGPS(bool enable_raw)
   ,  _term_number(0)
   ,  _term_offset(0)
   ,  _gps_data_good(false)
+  ,  _date_good(false)
 #ifndef _GPS_NO_STATS
   ,  _encoded_characters(0)
   ,  _good_sentences(0)
@@ -186,19 +187,31 @@ bool TinyGPS::term_complete()
     byte checksum = 16 * from_hex(_term[0]) + from_hex(_term[1]);
     if (checksum == _parity)
     {
+      // Handle MTK3339 RTC clock (even with no GPS fix)
+      switch(_sentence_type)
+      {
+      case _GPS_SENTENCE_GPRMC:
+        _time      = _new_time;
+        _date      = _new_date;
+        _date_good = true;
+        _last_time_fix = _new_time_fix;
+        break;
+      case _GPS_SENTENCE_GPGGA:
+        _time      = _new_time;
+        if (_date_good)
+          _last_time_fix = _new_time_fix;
+        break;
+      }
       if (_gps_data_good)
       {
 #ifndef _GPS_NO_STATS
         ++_good_sentences;
 #endif
-        _last_time_fix = _new_time_fix;
         _last_position_fix = _new_position_fix;
 
         switch(_sentence_type)
         {
         case _GPS_SENTENCE_GPRMC:
-          _time      = _new_time;
-          _date      = _new_date;
           _latitude  = _new_latitude;
           _longitude = _new_longitude;
           _speed     = _new_speed;
@@ -206,30 +219,13 @@ bool TinyGPS::term_complete()
           break;
         case _GPS_SENTENCE_GPGGA:
           _altitude  = _new_altitude;
-          _time      = _new_time;
           _latitude  = _new_latitude;
           _longitude = _new_longitude;
           _numsats   = _new_numsats;
           _hdop      = _new_hdop;
           break;
         }
-
         return true;
-      } else {
-        // Handle MTK3339 RTC clock (even with no GPS fix)
-        if (_new_time) {
-          _last_time_fix = _new_time_fix;
-          switch(_sentence_type)
-          {
-          case _GPS_SENTENCE_GPRMC:
-            _time      = _new_time;
-            _date      = _new_date;
-            break;
-          case _GPS_SENTENCE_GPGGA:
-            _time      = _new_time;
-            break;
-          }
-        }
       }
     }
 
