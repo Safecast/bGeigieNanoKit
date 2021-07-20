@@ -341,6 +341,7 @@ void loop()
     while (gpsSerial.available())
     {
       char c = gpsSerial.read();
+        
 #else
     while (Serial.available())
     {
@@ -365,6 +366,13 @@ void loop()
     // digitalWrite(GPS_LED_PIN, LOW);
   }
 #endif
+
+
+  // generate CPM every TIME_INTERVAL seconds
+  if IS_READY {
+      unsigned long cpm=0, cpb=0;
+      
+COUNTER_TYPE this_count = interruptCounterCount();
 
 	  // Compute count in the previous bucket based on the difference
 	  // between the prior count and the current count.  This algorithm
