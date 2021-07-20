@@ -1,5 +1,5 @@
 /*
-   Simple library for Arduino implementing a counter using the interrupt pin
+   Simple library for Arduino implementing a hardware counter
    for a Geigier counter for example
 
    Copyright (c) 2011, Robin Scheibler aka FakuFaku
@@ -28,57 +28,55 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "InterruptCounter.h"
-#include <limits.h>
+#ifndef COUNTER_H
+#define COUNTER_H
 
-// Declare variables here
-int _interrupt_pin;
-unsigned long _start_time;
-unsigned long _delay;
-COUNTER_TYPE _count;
+// Link to arduino library
+#if ARDUINO >= 100
+#include <Arduino.h>
+#else
+#include <WProgram.h>
+#endif
 
-// private methods here
-void interrupt_routine();
+// set bit macro
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
 
-// Constructor
-void interruptCounterSetup(int interrupt_pin, unsigned long delay)
+#if defined(__AVR_ATmega1280__)
+#define TCCRnA TCCR5A
+#define TCCRnB TCCR5B
+#define TCNTn  TCNT5
+#define TIFRn  TIFR5
+#define TOVn   TOV5
+#else
+#define TCCRnA TCCR1A
+#define TCCRnB TCCR1B
+#define TCNTn  TCNT1		// define counter width as COUNTER_TYPE below
+#define TIFRn  TIFR1
+#define TOVn   TOV1
+#endif
+
+// Defining the type of the TCNTn hardware counter, with the base assumption
+// that the hardware counter will wrap only after the max value of this type.
+typedef unsigned int COUNTER_TYPE;
+
+// Defining the Class for the counter
+class HardwareCounter
 {
-  _interrupt_pin = interrupt_pin;
-  _delay = delay;
-  _count = 0;
-  attachInterrupt(_interrupt_pin, interrupt_routine, RISING);
-}
+  // public
+  public:
+    HardwareCounter(int timer_pin, long delay);
+    void start();
+    int available();
+    COUNTER_TYPE count();
 
-// call this to start the counter
-void interruptCounterReset()
-{
-  // set start time
-  _start_time = millis();
-  // set count to zero (optional)
-  _count = 0;
-}
+  // privatee
+  private:
+    long _start_time;
+    long _delay;
+    COUNTER_TYPE _count;
 
-// This indicates when the count over the determined period is over
-int interruptCounterAvailable()
-{
-  // get current time
-  unsigned long now = millis();
-  // do basic check for millis overflow
-  if (now >= _start_time)
-    return (now - _start_time >= _delay);
-  else
-    return (ULONG_MAX + now - _start_time >= _delay);
-}
+};
 
-// return current number of counts
-COUNTER_TYPE interruptCounterCount()
-{
-  return _count;
-}
-
-// The interrupt routine, simply increment count on every event
-void interrupt_routine()
-{
-  _count++;
-}
-
+#endif /* COUNTER_H */

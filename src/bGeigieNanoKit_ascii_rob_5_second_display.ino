@@ -54,8 +54,8 @@
 
 */
 #include <limits.h>
-#include <SoftwareSerial.h>
-// #include "SoftwareSerial.h"
+// #include <SoftwareSerial.h>
+#include "SoftwareSerial.h"
 #include <math.h>
 #include <stdlib.h>
 #include <avr/wdt.h>
@@ -77,8 +77,10 @@ SSD1306AsciiSoftSpi display;
 #define AVAILABLE 'A' // indicates geiger data are ready (available)
 #define VOID 'V'      // indicates geiger data not ready (void)
 #define DEFAULT_YEAR 2013
-#define NX 12
+// #define NX 12
 #define TIME_INTERVAL 5000
+#define NX (60000/TIME_INTERVAL) // Number of bins in 1 minute (cpm_gen assumes 1 minute exactly)
+
 // #define IS_READY (1)
 #define IS_READY (interruptCounterAvailable())
 
@@ -118,6 +120,9 @@ unsigned long  shock_dimtime = 0;
 static char line[LINE_SZ];
 static char strbuffer[STRBUFFER_SZ];
 static char strbuffer1[STRBUFFER_SZ];
+
+// previous hardware interrupt counter
+COUNTER_TYPE prev_count = 0;
 
 // OpenLog settings -----------------------------------------------------------
 #define OPENLOG_RETRY 200
@@ -196,7 +201,7 @@ void setup()
   setupOpenLog();
   if (openlog_ready)
   {
-    nanoSetup.loadFromFile("SAFECAST.TXT");
+    nanoSetup.loadFromFile(PSTR("SAFECAST.TXT"));
   }
 #endif
 
@@ -211,7 +216,7 @@ void setup()
 
   // And now Start the Pulse Counter!
   interruptCounterReset();
-
+  prev_count = interruptCounterCount();
   gpsSerial.begin(9600);
 
   // Put GPS serial in listen mode
@@ -361,25 +366,26 @@ void loop()
   }
 #endif
 
-  // generate CPM every TIME_INTERVAL seconds
-  if IS_READY
-  {
-    unsigned long cpm = 0, cpb = 0;
+	  // Compute count in the previous bucket based on the difference
+	  // between the prior count and the current count.  This algorithm
+	  // is used instead of one that resets the hardware count, so that
+	  // we don't have any windows in which we will miss interrupts.
+	  // Note that because the counter counts up to the full value of
+	  // COUNTER_TYPE before wrap, this math works even after
+	  // the counter wraps.  For example, for a COUNTER_TYPE that
+	  // is 32-bits, 3 - 0xfffffffe == 5
+      cpb = this_count - prev_count;
+	  prev_count = this_count;
 
-    // obtain the count in the last bin
-    cpb = interruptCounterCount();
+      // insert count in sliding window and compute CPM
+      shift_reg[reg_index] = cpb;     // put the count in the correct bin
+      reg_index = (reg_index+1) % NX; // increment register index
+      cpm = cpm_gen();                // compute sum over all bins
 
-    // reset the pulse counter
-    interruptCounterReset();
+      // update the total counter
+      total_count += cpb;
+      uptime += TIME_INTERVAL/1000;
 
-    // insert count in sliding window and compute CPM
-    shift_reg[reg_index] = cpb;       // put the count in the correct bin
-    reg_index = (reg_index + 1) % NX; // increment register index
-    cpm = cpm_gen();                  // compute sum over all bins
-
-    // update the total counter
-    total_count += cpb;
-    uptime += 5;
 
     // update max cpm
     if (cpm > max_count)
@@ -387,7 +393,7 @@ void loop()
 
 #if ENABLE_EEPROM_DOSE
     dose.total_count += cpb;
-    dose.total_time += 5;
+    dose.total_time += TIME_INTERVAL/1000;
     if (dose.total_time % BMRDD_EEPROM_DOSE_WRITETIME == 0)
     {
       EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
@@ -690,7 +696,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
   {
     if (value >= 10000)
     {
-      dtostrf((float)(value / 1000.0), 4, 3, strbuffer);
+      dtostrf(((float)value)/1000.0, 4, 3, strbuffer);
       strncpy(strbuffer1, strbuffer, 4);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -715,7 +721,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     // display in Sievert/h
     if ((value / config.cpm_factor) >= 1000)
     {
-      dtostrf((float)(value / config.cpm_factor / 1000.0), 4, 2, strbuffer);
+      dtostrf(((float)value)/config.cpm_factor/1000.0, 4, 2, strbuffer);
       strncpy(strbuffer1, strbuffer, 5);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -728,7 +734,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     }
     else if ((value / config.cpm_factor) >= 10)
     {
-      dtostrf((float)(value / config.cpm_factor / 1.0), 4, 2, strbuffer);
+      	  dtostrf(((float)value)/config.cpm_factor/1.0, 4, 2, strbuffer);
       strncpy(strbuffer1, strbuffer, 5);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -741,7 +747,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     }
     else
     {
-      dtostrf((float)(value / config.cpm_factor / 1.0), 4, 3, strbuffer);
+      dtostrf(((float)value)/config.cpm_factor/1.0, 4, 3, strbuffer);
       strncpy(strbuffer1, strbuffer, 6);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -946,7 +952,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       {
         dtostrf(((float)cpb*NX)/config.cpm_factor, 0, 3, strbuffer);
       }else{
-        dtostrf(((float)cpm)/config.cpm_factor, 0, 3, strbuffer);
+		    dtostrf(((float)cpm)/config.cpm_factor, 0, 3, strbuffer);
       }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
@@ -956,7 +962,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     {
       if (digitalRead(CUSTOM_FN_PIN) == LOW)
       {
-        dtostrf((float)(cpb * config.bqm_factor * 12), 0, 3, strbuffer);
+        dtostrf(((float)cpm)*config.bqm_factor, 0, 3, strbuffer);
       }
       else
       {
@@ -971,7 +977,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (toggle)
     {
       // Display distance
-      dtostrf((float)(gps_distance / 1000.0), 0, 1, strbuffer);
+      dtostrf(((float)gps_distance)/1000.0, 0, 1, strbuffer);
       // display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
       display.setCursor(116 - (strlen(strbuffer) * 6), 3); // textsize*8
       display.print(strbuffer);
@@ -1031,13 +1037,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         if (cpm > 1000)
         {
           if (digitalRead(CUSTOM_FN_PIN) == LOW)
-          {
-            dtostrf((float)(cpb / 1000.00 * 12), 0, 1, strbuffer);
-          }
-          else
-          {
-            dtostrf((float)(cpm / 1000.00), 0, 1, strbuffer);
-          }
+              if (cpm>config.alarm_level){
+		        dtostrf(((float)cpb*NX)/1000.00, 0, 1, strbuffer);
+              }else{
+		        dtostrf(((float)cpm)/1000.00, 0, 1, strbuffer);
+              }
           strncpy(strbuffer1, strbuffer, 5);
           if (strbuffer1[strlen(strbuffer1) - 1] == '.')
           {
@@ -1051,7 +1055,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         {
           if (digitalRead(CUSTOM_FN_PIN) == LOW)
           {
-            dtostrf((float)cpb * 12, 0, 0, strbuffer);
+            dtostrf((float)cpb*NX, 0, 0, strbuffer);
           }
           else
           {
@@ -1066,7 +1070,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Display bq/m2
         if ((cpm * config.bqm_factor) > 1000000)
         {
-          dtostrf((float)(cpm * config.bqm_factor / 1000000.0), 0, 1, strbuffer);
+          dtostrf(((float)cpm)*config.bqm_factor/1000000.0, 0, 1, strbuffer);
           strncpy(strbuffer1, strbuffer, 5);
           display.print(strbuffer1);
           sprintf_P(strbuffer, PSTR("mBq/m2"));
@@ -1076,7 +1080,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         {
           if ((cpm * config.bqm_factor) > 10000)
           {
-            dtostrf((float)(cpm * config.bqm_factor / 1000.0), 0, 0, strbuffer);
+            dtostrf(((float)cpm)*config.bqm_factor/1000.0, 0, 0, strbuffer);
             strncpy(strbuffer1, strbuffer, 5);
             display.print(strbuffer1);
             sprintf_P(strbuffer, PSTR("kBq/m2"));
@@ -1084,7 +1088,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
           }
           else
           {
-            dtostrf((float)(cpm * config.bqm_factor), 0, 0, strbuffer);
+            dtostrf(((float)cpm)*config.bqm_factor, 0, 0, strbuffer);
             display.print(strbuffer);
             sprintf_P(strbuffer, PSTR("Bq/m2"));
             display.print(strbuffer);
@@ -1104,13 +1108,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Total dose and max count
         sprintf_P(strbuffer, PSTR("Mx="));
         display.print(strbuffer);
-        dtostrf((float)(max_count / config.cpm_factor), 0, 1, strbuffer);
+        dtostrf(((float)max_count)/config.cpm_factor, 0, 1, strbuffer);
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("uS/h "));
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("Ds="));
         display.print(strbuffer);
-        dtostrf((float)(((dose.total_count / (dose.total_time / 60.0)) / config.cpm_factor) * (dose.total_time / 3600.0)), 0, 0, strbuffer);
+        dtostrf(((((float)dose.total_count) / (((float)dose.total_time)/60.0) ) / config.cpm_factor) * (((float)dose.total_time)/3600.0), 0, 0, strbuffer);
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("uS"));
         display.print(strbuffer);

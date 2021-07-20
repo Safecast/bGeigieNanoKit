@@ -38,15 +38,15 @@
 #include <WProgram.h>
 #endif
 
+// Defining the type of the TCNTn hardware counter, with the base assumption
+// that the hardware counter will wrap only after the max value of this type.
+typedef unsigned int COUNTER_TYPE;
 
 // Defining the public functions for the counter
 void interruptCounterSetup(int interrupt_pin, unsigned long delay);
-void interruptShockSetup(int interrupt_pin, unsigned long delay);
 void interruptCounterReset();
-void interruptShockReset();
 int interruptCounterAvailable();
-unsigned long interruptCounterCount();
-unsigned long interruptShockTrue();
+COUNTER_TYPE interruptCounterCount();
 
 #endif /* INTERRUPTCOUNTER_H */
 

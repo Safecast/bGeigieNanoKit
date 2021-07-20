@@ -1,5 +1,5 @@
 /*
-   Simple library for Arduino implementing a counter using the interrupt pin
+   Simple library for Arduino implementing a hardware counter
    for a Geigier counter for example
 
    Copyright (c) 2011, Robin Scheibler aka FakuFaku
@@ -28,38 +28,56 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "InterruptCounter.h"
+#include "HardwareCounter.h"
 #include <limits.h>
 
-// Declare variables here
-int _interrupt_pin;
-unsigned long _start_time;
-unsigned long _delay;
-COUNTER_TYPE _count;
-
-// private methods here
-void interrupt_routine();
-
 // Constructor
-void interruptCounterSetup(int interrupt_pin, unsigned long delay)
+HardwareCounter::HardwareCounter(int timer_pin, long delay)
 {
-  _interrupt_pin = interrupt_pin;
+  // register delay
   _delay = delay;
-  _count = 0;
-  attachInterrupt(_interrupt_pin, interrupt_routine, RISING);
+  // set pin as digital input
+  pinMode(timer_pin, INPUT);
 }
 
 // call this to start the counter
-void interruptCounterReset()
+void HardwareCounter::start()
 {
+
+  // hardware counter setup ( refer atmega168.pdf chapter 16-bit counter1)
+  TCCRnA=0;     // reset timer/countern control register A
+  TCCRnB=0;     // reset timer/countern control register A
+  // set timer/counter1 hardware as counter , counts events on pin Tn ( arduino pin 5 on 168, pin 47 on Mega )
+  // normal mode, wgm10 .. wgm13 = 0
+  sbi (TCCRnB ,CS10);  // External clock source on Tn pin. Clock on rising edge.
+  sbi (TCCRnB ,CS11);
+  sbi (TCCRnB ,CS12);
+  TCCRnB = TCCRnB | 7;  //  Counter Clock source = pin Tn , start counting now
+
   // set start time
   _start_time = millis();
+
+  // The counter needs to be reset after
+  // the counter is setup (This is important)!
+  TCNTn=0;      // counter value = 0
+
   // set count to zero (optional)
   _count = 0;
 }
 
+// call this to read the current count and save it
+COUNTER_TYPE HardwareCounter::count()
+{
+
+  TCCRnB = TCCRnB & ~7;   // Gate Off  / Counter Tn stopped
+  _count = (COUNTER_TYPE) TCNTn;
+  TCCRnB = TCCRnB | 7;    // restart counting
+  return _count;
+
+}
+
 // This indicates when the count over the determined period is over
-int interruptCounterAvailable()
+int HardwareCounter::available()
 {
   // get current time
   unsigned long now = millis();
@@ -70,15 +88,4 @@ int interruptCounterAvailable()
     return (ULONG_MAX + now - _start_time >= _delay);
 }
 
-// return current number of counts
-COUNTER_TYPE interruptCounterCount()
-{
-  return _count;
-}
-
-// The interrupt routine, simply increment count on every event
-void interrupt_routine()
-{
-  _count++;
-}
 
