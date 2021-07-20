@@ -35,11 +35,24 @@
 int _interrupt_pin;
 unsigned long _start_time;
 unsigned long _delay;
+unsigned long _shocks;
+bool _shock_happend;
 COUNTER_TYPE _count;
 
 // private methods here
 void interrupt_routine();
+//shock happen event
+void shock(){
+  // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+  _shock_happend = true;
+  // _shocks++;
+}
 
+// return current number of counts
+unsigned long interruptShockTrue()
+{
+  return _shock_happend;
+}
 // Constructor
 void interruptCounterSetup(int interrupt_pin, unsigned long delay)
 {
@@ -48,7 +61,12 @@ void interruptCounterSetup(int interrupt_pin, unsigned long delay)
   _count = 0;
   attachInterrupt(_interrupt_pin, interrupt_routine, RISING);
 }
-
+  //setupshock sensor at SHOCKPIN that triggers function shock
+void interruptShockSetup(int interrupt_pin, unsigned long delay)
+{
+  _interrupt_pin = interrupt_pin;
+  attachInterrupt(_interrupt_pin, shock, RISING);// 0 = D2, 1 = D3 can only be used with software serial.
+}
 // call this to start the counter
 void interruptCounterReset()
 {
@@ -56,6 +74,12 @@ void interruptCounterReset()
   _start_time = millis();
   // set count to zero (optional)
   _count = 0;
+}
+
+// reset shock sensor state
+void interruptShockReset()
+{
+_shock_happend = false;
 }
 
 // This indicates when the count over the determined period is over

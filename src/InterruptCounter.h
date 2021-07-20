@@ -44,9 +44,11 @@ typedef unsigned int COUNTER_TYPE;
 
 // Defining the public functions for the counter
 void interruptCounterSetup(int interrupt_pin, unsigned long delay);
+void interruptShockSetup(int interrupt_pin, unsigned long delay);
 void interruptCounterReset();
+void interruptShockReset();
 int interruptCounterAvailable();
 COUNTER_TYPE interruptCounterCount();
-
+unsigned long interruptShockTrue();
 #endif /* INTERRUPTCOUNTER_H */
 
