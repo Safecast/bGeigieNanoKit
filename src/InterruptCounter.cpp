@@ -35,7 +35,7 @@
 int _interrupt_pin;
 unsigned long _start_time;
 unsigned long _delay;
-unsigned long _count;
+COUNTER_TYPE _count;
 
 // private methods here
 void interrupt_routine();
@@ -71,7 +71,7 @@ int interruptCounterAvailable()
 }
 
 // return current number of counts
-unsigned long interruptCounterCount()
+COUNTER_TYPE interruptCounterCount()
 {
   return _count;
 }
