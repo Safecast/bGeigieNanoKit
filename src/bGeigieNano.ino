@@ -42,7 +42,7 @@
 #include <avr/wdt.h>
 #include <EEPROM.h>
 #include "TinyGPS.h"
-#include "SoftwareSerial.h"
+#include <SoftwareSerial.h>
 
 #include "NanoSetup.h"
 #include "NanoConfig.h"
