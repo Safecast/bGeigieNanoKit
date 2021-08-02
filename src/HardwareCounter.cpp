@@ -68,7 +68,7 @@ void HardwareCounter::start()
 // call this to read the current count and save it
 COUNTER_TYPE HardwareCounter::count()
 {
-
+ _start_time = millis();   // reset time for next sample 
   TCCRnB = TCCRnB & ~7;   // Gate Off  / Counter Tn stopped
   _count = (COUNTER_TYPE) TCNTn;
   TCCRnB = TCCRnB | 7;    // restart counting

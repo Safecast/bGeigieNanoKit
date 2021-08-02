@@ -97,6 +97,7 @@ int interruptCounterAvailable()
 // return current number of counts
 COUNTER_TYPE interruptCounterCount()
 {
+  _start_time = millis();   // reset time for next sample
   return _count;
 }
 

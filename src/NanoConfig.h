@@ -108,7 +108,7 @@
 
 // bGeigie <-> xGeigie switch pin
 //Rob and Pieter versions with old board are A7 normal is A5
-#define GEIGIE_TYPE_PIN A5
+#define GEIGIE_TYPE_PIN A7
 #define GEIGIE_TYPE_THRESHOLD 500
 
 // Voltage divider
