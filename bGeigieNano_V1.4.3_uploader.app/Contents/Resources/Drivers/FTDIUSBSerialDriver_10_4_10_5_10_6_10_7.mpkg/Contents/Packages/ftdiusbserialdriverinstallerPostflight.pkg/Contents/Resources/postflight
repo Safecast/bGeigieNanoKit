@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-RESULT=`/sbin/kextload '/System/Library/Extensions/FTDIUSBSerialDriver.kext'`
-
-exit 0
