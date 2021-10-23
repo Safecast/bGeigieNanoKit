@@ -181,7 +181,7 @@ void NanoSetup::loadFromFile(char * setupFile) {
       if (mConfig.device_id != (unsigned int)atoi(value)) {
         mConfig.device_id = atoi(value);
         config_changed = true;
-        DEBUG_PRINTLN("   - Update devide id in EEPROM");
+        DEBUG_PRINTLN("   - Update device id in EEPROM");
       }
     }
     else if(strcmp(key, "gt") == 0) {
