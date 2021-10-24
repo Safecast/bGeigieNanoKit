@@ -314,7 +314,7 @@ void setup()
   OpenLog.begin(9600);
   setupOpenLog();
   if (openlog_ready) {
-	nanoSetup.loadFromFile(PSTR("SAFECAST.TXT"));
+	nanoSetup.loadFromFile("SAFECAST.TXT");
   }
 #endif
 
