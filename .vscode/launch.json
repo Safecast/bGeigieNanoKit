@@ -29,6 +29,16 @@
             "projectEnvName": "fio",
             "toolchainBinDir": "/home/rob/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "platformio-debug",
+            "request": "launch",
+            "name": "PIO Debug (without uploading)",
+            "executable": "/home/rob/Documents/PlatformIO/Projects/bGeigIeNanoKit_github/.pio/build/fio/firmware.elf",
+            "projectEnvName": "fio",
+            "toolchainBinDir": "/home/rob/.platformio/packages/toolchain-atmelavr/bin",
+            "internalConsoleOptions": "openOnSessionStart",
+            "loadMode": "manual"
         }
     ]
 }
