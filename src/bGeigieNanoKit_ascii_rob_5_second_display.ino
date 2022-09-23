@@ -201,7 +201,7 @@ void setup()
   setupOpenLog();
   if (openlog_ready)
   {
-    nanoSetup.loadFromFile(PSTR("SAFECAST.TXT"));
+    nanoSetup.loadFromFile("SAFECAST.TXT");
   }
 #endif
 
@@ -286,7 +286,7 @@ void setup()
   }
 
   display.setCursor(50, 7);
-  display.print("Safecast 2021");
+  display.print("Safecast 2022");
 
   delay(2000);
   display.clear();
