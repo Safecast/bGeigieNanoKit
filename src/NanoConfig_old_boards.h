@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        2007
-#define NANO_VERSION       "1.5.5"
+#define NANO_VERSION       "1.4.3"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -32,7 +32,6 @@
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 #define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
-#define ENABLE_100M_TRUNCATION   0 // for JP
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output
@@ -44,7 +43,7 @@
 
 #if ENABLE_NANOKIT_PIN
 #if ENABLE_NANOPCBKIT_PIN
-  // #warning NANO PCB KIT with OLED screen used !
+  #warning NANO PCB KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
   #define OLED_CLK 10
   #define OLED_DATA 9
@@ -57,7 +56,7 @@
   #define OPENLOG_TX_PIN 5
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
-  #define CUSTOM_FN_PIN A5 //Mikele setup A3 rob setup A5 normal setup D3
+  #define CUSTOM_FN_PIN 3
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
@@ -103,11 +102,7 @@
 // 0 = D2, 1 = D3
 #define INTERRUPT_COUNTER_PIN 0
 
-// for detecting shock if shock sensor is connected on D3 interupt 1
-#define SHOCKPIN 1
-
 // bGeigie <-> xGeigie switch pin
-//Rob and Pieter versions with old board are A7 normal is A5
 #define GEIGIE_TYPE_PIN A7
 #define GEIGIE_TYPE_THRESHOLD 500
 
