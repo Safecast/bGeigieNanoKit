@@ -30,7 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// 2022-09-22 V1.5.5 Fixe copyright year.
+// 2022-09-22 V1.5.5 Fixed copyright year.
 // 2017-11-24 V1.4.3 Setup for 5 seconds updates test.
 // 2018-02-24 V1.4.4J  Setup for JP 100m TRUNCATION.
 // 2018-06-17 V1.4.5 removed Japanese. trucation
