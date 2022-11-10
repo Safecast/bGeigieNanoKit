@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        2007
-#define NANO_VERSION       "1.5.5"
+#define NANO_VERSION       "1.5.6"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
@@ -57,7 +57,7 @@
   #define OPENLOG_TX_PIN 5
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
-  #define CUSTOM_FN_PIN A3 //Mikele setup
+  #define CUSTOM_FN_PIN A5 //Mikele setup A3 rob setup A5 normal setup D3
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
