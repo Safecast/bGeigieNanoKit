@@ -1213,7 +1213,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.println(strbuffer);
 
   display.setCursor(50, 7);
-  display.print("Safecast 2022");
+  display.print("Safecast 3");
   //       display.display();
 
 #endif
