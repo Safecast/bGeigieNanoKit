@@ -296,12 +296,29 @@ void setup()
 
 }
 
+//declare reset function at address 0 - MUST BE ABOVE LOOP
+void(* resetFunc) (void) = 0; 
+
+
 // ****************************************************************************
 // Main loop
 // ****************************************************************************
 void loop()
 
 {
+  //Setup reset time for fixed sensor
+  //if ( millis()  >= 1000) resetFunc(); //call reset every 1 second.
+  if ( millis()  >= 60000 ) resetFunc(); //call reset every 60 seconds (1 Minute).
+  //if ( millis()  >= 3600000) resetFunc(); //call reset every 60 mins (1 Hour)
+  //if ( millis()  >= 86400000) resetFunc(); //call reset every 24 hours (1 Day). .
+  //if ( millis()  >= 604800000 ) resetFunc(); //call reset every 7 days (1 Week).
+  //if ( millis()  >= 2592000000) resetFunc(); //call reset every 30 days (1 Month).
+  //if ( millis()  >= 2678400000) resetFunc(); //call reset every 31 days (1 Month).
+  //if ( millis()  >= 31536000000 ) resetFunc(); //call reset every 365 days (1 Year).
+
+
+
+
   bool gpsReady = false;
 
   shock_happend = interruptShockTrue();
