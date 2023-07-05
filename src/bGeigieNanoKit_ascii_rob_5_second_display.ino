@@ -30,6 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// 2023-07-05 V1.5.7 Fix display bug that showed 60s at wrong place
 // 2022-09-22 V1.5.5 Fixed copyright year.
 // 2017-11-24 V1.4.3 Setup for 5 seconds updates test.
 // 2018-02-24 V1.4.4J  Setup for JP 100m TRUNCATION.
@@ -1172,7 +1173,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   unsigned long current_dimtime=millis();
   if(current_dimtime-shock_dimtime < dimtime){
     display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-    display.print("60s  ");
+    // display.print("60s  ");
     display.setContrast (254);
   }
   else
