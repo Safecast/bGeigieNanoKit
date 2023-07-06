@@ -38,9 +38,9 @@
 // 2018-08-03 V1.4.7 5 seconds update display
 // 2019-22-01 V1.4.8 updated copyright year
 // 2020-01-15 V1.4.9 updated year started for dimming display
-// 2021-05-15 V1.4.9 Moved interup counter from detect from SHOCKPIN to A1 (A1 csan be used as hardware interrupt A6 not) 
+// 2021-05-15 V1.4.9 Moved interup counter from detect from SHOCKPIN to A1 (A1 csan be used as hardware interrupt A6 not)
 // 2021-05-22 V1.5.0 brightens display on shock.
-/* 
+/*
 -- Check code for blanking display
 
         void sleepDisplay(Adafruit_SSD1306* display) {
@@ -80,7 +80,7 @@ SSD1306AsciiSoftSpi display;
 #define DEFAULT_YEAR 2013
 // #define NX 12
 #define TIME_INTERVAL 5000
-#define NX (60000/TIME_INTERVAL) // Number of bins in 1 minute (cpm_gen assumes 1 minute exactly)
+#define NX (60000 / TIME_INTERVAL) // Number of bins in 1 minute (cpm_gen assumes 1 minute exactly)
 
 // #define IS_READY (1)
 #define IS_READY (interruptCounterAvailable())
@@ -114,8 +114,7 @@ bool shock_happend = true;
 unsigned long shocks = 0;
 unsigned long dimtime = 120000;
 unsigned long current_dimtime = 0;
-unsigned long  shock_dimtime = 0;
-
+unsigned long shock_dimtime = 0;
 
 // the line buffer for serial receive and send
 static char line[LINE_SZ];
@@ -190,7 +189,7 @@ void setup()
 #endif
   pinMode(GEIGIE_TYPE_PIN, INPUT);
 
-  //setup serial
+  // setup serial
   Serial.begin(9600);
   Serial.println("START SETUP");
 
@@ -206,13 +205,13 @@ void setup()
   }
 #endif
 
-  //setup function key
+  // setup function key
   pinMode(CUSTOM_FN_PIN, INPUT_PULLUP);
 
   // Create pulse counter
   interruptCounterSetup(INTERRUPT_COUNTER_PIN, TIME_INTERVAL);
 
-  //setup shockpin
+  // setup shockpin
   interruptShockSetup(SHOCKPIN, TIME_INTERVAL);
 
   // And now Start the Pulse Counter!
@@ -233,7 +232,7 @@ void setup()
   // setup analog reference to read battery and boost voltage
   analogReference(INTERNAL);
 
-  //Display for SSD1306 setup
+  // Display for SSD1306 setup
   display.begin(&Adafruit128x64, OLED_CS, OLED_DC, OLED_CLK, OLED_DATA, OLED_RESET);
   display.setFont(Adafruit5x7);
 
@@ -274,12 +273,12 @@ void setup()
   sprintf_P(strbuffer, PSTR("Mode =%d"), config.sensor_mode);
   display.print(strbuffer);
 
-  //display.setTextSize(1);
+  // display.setTextSize(1);
   display.setCursor(0, 4);
   sprintf_P(strbuffer, PSTR("#%04d"), config.device_id);
   display.print(strbuffer);
 
-  //display.setTextSize(1);
+  // display.setTextSize(1);
   if (strlen(config.user_name))
   {
     display.setCursor(0, 5); // textsize*8
@@ -291,14 +290,12 @@ void setup()
 
   delay(2000);
   display.clear();
-  shock_happend=true;
+  shock_happend = true;
   display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-
 }
 
-//declare reset function at address 0 - MUST BE ABOVE LOOP
-void(* resetFunc) (void) = 0; 
-
+// declare reset function at address 0 - MUST BE ABOVE LOOP
+void (*resetFunc)(void) = 0;
 
 // ****************************************************************************
 // Main loop
@@ -306,18 +303,15 @@ void(* resetFunc) (void) = 0;
 void loop()
 
 {
-  //Setup reset time for fixed sensor
-  //if ( millis()  >= 1000) resetFunc(); //call reset every 1 second.
-  if ( millis()  >= 60000 ) resetFunc(); //call reset every 60 seconds (1 Minute).
-  //if ( millis()  >= 3600000) resetFunc(); //call reset every 60 mins (1 Hour)
-  //if ( millis()  >= 86400000) resetFunc(); //call reset every 24 hours (1 Day). .
-  //if ( millis()  >= 604800000 ) resetFunc(); //call reset every 7 days (1 Week).
-  //if ( millis()  >= 2592000000) resetFunc(); //call reset every 30 days (1 Month).
-  //if ( millis()  >= 2678400000) resetFunc(); //call reset every 31 days (1 Month).
-  //if ( millis()  >= 31536000000 ) resetFunc(); //call reset every 365 days (1 Year).
-
-
-
+  // Setup reset time for fixed sensor
+  // if ( millis()  >= 1000) resetFunc(); //call reset every 1 second.
+  // if ( millis()  >= 60000 ) resetFunc(); //call reset every 60 seconds (1 Minute).
+  // if ( millis()  >= 3600000) resetFunc(); //call reset every 60 mins (1 Hour).
+  // if ( millis()  >= 86400000) resetFunc(); //call reset every 24 hours (1 Day).
+  if (millis() >= 604800000)
+    resetFunc(); // call reset every 7 days (1 Week).
+  // if ( millis()  >= 2592000000) resetFunc(); //call reset every 30 days (1 Month).
+  // if ( millis()  >= 2678400000) resetFunc(); //call reset every 31 days (1 Month).
 
   bool gpsReady = false;
 
@@ -337,7 +331,7 @@ void loop()
 #endif
 
 #if ENABLE_GEIGIE_SWITCH
-  //Switch to bGeigie Xmode on low battery
+  // Switch to bGeigie Xmode on low battery
   int battery = ((read_voltage(VOLTAGE_PIN) - 30));
   if (battery < 1)
   {
@@ -359,7 +353,7 @@ void loop()
     while (gpsSerial.available())
     {
       char c = gpsSerial.read();
-        
+
 #else
     while (Serial.available())
     {
@@ -385,33 +379,32 @@ void loop()
   }
 #endif
 
-
   // generate CPM every TIME_INTERVAL seconds
-  if IS_READY {
-      unsigned long cpm=0, cpb=0;
-      
-COUNTER_TYPE this_count = interruptCounterCount();
+  if IS_READY
+  {
+    unsigned long cpm = 0, cpb = 0;
 
-	  // Compute count in the previous bucket based on the difference
-	  // between the prior count and the current count.  This algorithm
-	  // is used instead of one that resets the hardware count, so that
-	  // we don't have any windows in which we will miss interrupts.
-	  // Note that because the counter counts up to the full value of
-	  // COUNTER_TYPE before wrap, this math works even after
-	  // the counter wraps.  For example, for a COUNTER_TYPE that
-	  // is 32-bits, 3 - 0xfffffffe == 5
-      cpb = this_count - prev_count;
-	  prev_count = this_count;
+    COUNTER_TYPE this_count = interruptCounterCount();
 
-      // insert count in sliding window and compute CPM
-      shift_reg[reg_index] = cpb;     // put the count in the correct bin
-      reg_index = (reg_index+1) % NX; // increment register index
-      cpm = cpm_gen();                // compute sum over all bins
+    // Compute count in the previous bucket based on the difference
+    // between the prior count and the current count.  This algorithm
+    // is used instead of one that resets the hardware count, so that
+    // we don't have any windows in which we will miss interrupts.
+    // Note that because the counter counts up to the full value of
+    // COUNTER_TYPE before wrap, this math works even after
+    // the counter wraps.  For example, for a COUNTER_TYPE that
+    // is 32-bits, 3 - 0xfffffffe == 5
+    cpb = this_count - prev_count;
+    prev_count = this_count;
 
-      // update the total counter
-      total_count += cpb;
-      uptime += TIME_INTERVAL/1000;
+    // insert count in sliding window and compute CPM
+    shift_reg[reg_index] = cpb;       // put the count in the correct bin
+    reg_index = (reg_index + 1) % NX; // increment register index
+    cpm = cpm_gen();                  // compute sum over all bins
 
+    // update the total counter
+    total_count += cpb;
+    uptime += TIME_INTERVAL / 1000;
 
     // update max cpm
     if (cpm > max_count)
@@ -419,7 +412,7 @@ COUNTER_TYPE this_count = interruptCounterCount();
 
 #if ENABLE_EEPROM_DOSE
     dose.total_count += cpb;
-    dose.total_time += TIME_INTERVAL/1000;
+    dose.total_time += TIME_INTERVAL / 1000;
     if (dose.total_time % BMRDD_EEPROM_DOSE_WRITETIME == 0)
     {
       EEPROM_writeAnything(BMRDD_EEPROM_DOSE, dose);
@@ -453,7 +446,7 @@ COUNTER_TYPE this_count = interruptCounterCount();
 
 #if ENABLE_OPENLOG
 #ifdef LOGALARM_LED_PIN
-        //digitalWrite(LOGALARM_LED_PIN, HIGH);
+        // digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
         createFile(logfile_name);
         // print header to serial
@@ -488,7 +481,7 @@ COUNTER_TYPE this_count = interruptCounterCount();
     if ((logfile_ready) && (GEIGIE_TYPE_B == config.type))
     {
 #ifdef LOGALARM_LED_PIN
-      //digitalWrite(LOGALARM_LED_PIN, HIGH);
+      // digitalWrite(LOGALARM_LED_PIN, HIGH);
 #endif
       // Put OpenLog serial in listen mode
       OpenLog.listen();
@@ -501,7 +494,7 @@ COUNTER_TYPE this_count = interruptCounterCount();
 #endif
     }
 #ifdef LOGALARM_LED_PIN
-    //digitalWrite(LOGALARM_LED_PIN, LOW);
+    // digitalWrite(LOGALARM_LED_PIN, LOW);
 #endif
 #endif
   }
@@ -590,7 +583,7 @@ void createFile(char *fileName)
     {
       OpenLog.print("append ");
       OpenLog.print(fileName);
-      OpenLog.write(13); //This is \r
+      OpenLog.write(13); // This is \r
 
       if (!waitOpenLog(false))
       {
@@ -611,7 +604,7 @@ void createFile(char *fileName)
     }
   } while (0 == result);
 
-  //OpenLog is now waiting for characters and will record them to the new file
+  // OpenLog is now waiting for characters and will record them to the new file
 }
 #endif
 
@@ -722,7 +715,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
   {
     if (value >= 10000)
     {
-      dtostrf(((float)value)/1000.0, 4, 3, strbuffer);
+      dtostrf(((float)value) / 1000.0, 4, 3, strbuffer);
       strncpy(strbuffer1, strbuffer, 4);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -747,7 +740,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     // display in Sievert/h
     if ((value / config.cpm_factor) >= 1000)
     {
-      dtostrf(((float)value)/config.cpm_factor/1000.0, 4, 2, strbuffer);
+      dtostrf(((float)value) / config.cpm_factor / 1000.0, 4, 2, strbuffer);
       strncpy(strbuffer1, strbuffer, 5);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -760,7 +753,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     }
     else if ((value / config.cpm_factor) >= 10)
     {
-      	  dtostrf(((float)value)/config.cpm_factor/1.0, 4, 2, strbuffer);
+      dtostrf(((float)value) / config.cpm_factor / 1.0, 4, 2, strbuffer);
       strncpy(strbuffer1, strbuffer, 5);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -773,7 +766,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     }
     else
     {
-      dtostrf(((float)value)/config.cpm_factor/1.0, 4, 3, strbuffer);
+      dtostrf(((float)value) / config.cpm_factor / 1.0, 4, 3, strbuffer);
       strncpy(strbuffer1, strbuffer, 6);
       if (strbuffer1[strlen(strbuffer1) - 1] == '.')
       {
@@ -930,7 +923,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     // display.setTextColor(WHITE);
     display.println(strbuffer);
 
-    //Display Alarm LED if GPS is locked and Radiation is valid
+    // Display Alarm LED if GPS is locked and Radiation is valid
 #ifdef LOGALARM_LED_PIN
     if ((geiger_status == AVAILABLE) && (gps.status()))
     {
@@ -976,9 +969,11 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     {
       if (digitalRead(CUSTOM_FN_PIN) == LOW)
       {
-        dtostrf(((float)cpb*NX)/config.cpm_factor, 0, 3, strbuffer);
-      }else{
-		    dtostrf(((float)cpm)/config.cpm_factor, 0, 3, strbuffer);
+        dtostrf(((float)cpb * NX) / config.cpm_factor, 0, 3, strbuffer);
+      }
+      else
+      {
+        dtostrf(((float)cpm) / config.cpm_factor, 0, 3, strbuffer);
       }
       display.print(strbuffer);
       sprintf_P(strbuffer, PSTR(" uSv/h"));
@@ -988,7 +983,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     {
       if (digitalRead(CUSTOM_FN_PIN) == LOW)
       {
-        dtostrf(((float)cpm)*config.bqm_factor, 0, 3, strbuffer);
+        dtostrf(((float)cpm) * config.bqm_factor, 0, 3, strbuffer);
       }
       else
       {
@@ -1003,7 +998,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (toggle)
     {
       // Display distance
-      dtostrf(((float)gps_distance)/1000.0, 0, 1, strbuffer);
+      dtostrf(((float)gps_distance) / 1000.0, 0, 1, strbuffer);
       // display.setCursor(116-(strlen(strbuffer)*6), offset+16); // textsize*8
       display.setCursor(116 - (strlen(strbuffer) * 6), 3); // textsize*8
       display.print(strbuffer);
@@ -1063,11 +1058,14 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         if (cpm > 1000)
         {
           if (digitalRead(CUSTOM_FN_PIN) == LOW)
-              if (cpm>config.alarm_level){
-		        dtostrf(((float)cpb*NX)/1000.00, 0, 1, strbuffer);
-              }else{
-		        dtostrf(((float)cpm)/1000.00, 0, 1, strbuffer);
-              }
+            if (cpm > config.alarm_level)
+            {
+              dtostrf(((float)cpb * NX) / 1000.00, 0, 1, strbuffer);
+            }
+            else
+            {
+              dtostrf(((float)cpm) / 1000.00, 0, 1, strbuffer);
+            }
           strncpy(strbuffer1, strbuffer, 5);
           if (strbuffer1[strlen(strbuffer1) - 1] == '.')
           {
@@ -1081,7 +1079,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         {
           if (digitalRead(CUSTOM_FN_PIN) == LOW)
           {
-            dtostrf((float)cpb*NX, 0, 0, strbuffer);
+            dtostrf((float)cpb * NX, 0, 0, strbuffer);
           }
           else
           {
@@ -1096,7 +1094,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Display bq/m2
         if ((cpm * config.bqm_factor) > 1000000)
         {
-          dtostrf(((float)cpm)*config.bqm_factor/1000000.0, 0, 1, strbuffer);
+          dtostrf(((float)cpm) * config.bqm_factor / 1000000.0, 0, 1, strbuffer);
           strncpy(strbuffer1, strbuffer, 5);
           display.print(strbuffer1);
           sprintf_P(strbuffer, PSTR("mBq/m2"));
@@ -1106,7 +1104,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         {
           if ((cpm * config.bqm_factor) > 10000)
           {
-            dtostrf(((float)cpm)*config.bqm_factor/1000.0, 0, 0, strbuffer);
+            dtostrf(((float)cpm) * config.bqm_factor / 1000.0, 0, 0, strbuffer);
             strncpy(strbuffer1, strbuffer, 5);
             display.print(strbuffer1);
             sprintf_P(strbuffer, PSTR("kBq/m2"));
@@ -1114,7 +1112,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
           }
           else
           {
-            dtostrf(((float)cpm)*config.bqm_factor, 0, 0, strbuffer);
+            dtostrf(((float)cpm) * config.bqm_factor, 0, 0, strbuffer);
             display.print(strbuffer);
             sprintf_P(strbuffer, PSTR("Bq/m2"));
             display.print(strbuffer);
@@ -1134,13 +1132,13 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
         // Total dose and max count
         sprintf_P(strbuffer, PSTR("Mx="));
         display.print(strbuffer);
-        dtostrf(((float)max_count)/config.cpm_factor, 0, 1, strbuffer);
+        dtostrf(((float)max_count) / config.cpm_factor, 0, 1, strbuffer);
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("uS/h "));
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("Ds="));
         display.print(strbuffer);
-        dtostrf(((((float)dose.total_count) / (((float)dose.total_time)/60.0) ) / config.cpm_factor) * (((float)dose.total_time)/3600.0), 0, 0, strbuffer);
+        dtostrf(((((float)dose.total_count) / (((float)dose.total_time) / 60.0)) / config.cpm_factor) * (((float)dose.total_time) / 3600.0), 0, 0, strbuffer);
         display.print(strbuffer);
         sprintf_P(strbuffer, PSTR("uS"));
         display.print(strbuffer);
@@ -1173,32 +1171,34 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     sprintf_P(strbuffer, PSTR("NO SD CARD/ GPS reset"));
     display.print(strbuffer);
 
-    //reset GPS
+    // reset GPS
     digitalWrite(LOGALARM_LED_PIN, LOW);
     memset(line, 0, LINE_SZ);
     sprintf_P(line, PSTR(PMTK_COLD_START));
     gpsSerial.println(line);
   }
 
-   //shock detect display
-  if (shock_happend){
-    shock_dimtime=millis();
+  // shock detect display
+  if (shock_happend)
+  {
+    shock_dimtime = millis();
     display.ssd1306WriteCmd(SSD1306_DISPLAYON);
-    shock_happend=!shock_happend;
+    shock_happend = !shock_happend;
     interruptShockReset();
   }
-  unsigned long current_dimtime=millis();
-  if(current_dimtime-shock_dimtime < dimtime){
+  unsigned long current_dimtime = millis();
+  if (current_dimtime - shock_dimtime < dimtime)
+  {
     display.ssd1306WriteCmd(SSD1306_DISPLAYON);
     // display.print("60s  ");
-    display.setContrast (254);
+    display.setContrast(254);
   }
   else
   {
     display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
   }
 
-//display CPS or CPM
+  // display CPS or CPM
   display.setCursor(92, 0);
   display.print((digitalRead(CUSTOM_FN_PIN) == LOW) ? " 5s" : "60s");
 
@@ -1319,14 +1319,14 @@ float read_voltage(int pin)
 
 #if ENABLE_100M_TRUNCATION
 /*
-* Truncate the latitude and longitude according to
-* Japan Post requirements
-*
-* This algorithm truncate the minute
-* part of the latitude and longitude
-* in order to rasterize the points on
-* a 100x100m grid.
-*/
+ * Truncate the latitude and longitude according to
+ * Japan Post requirements
+ *
+ * This algorithm truncate the minute
+ * part of the latitude and longitude
+ * in order to rasterize the points on
+ * a 100x100m grid.
+ */
 
 void truncate_100m(char *latitude, char *longitude)
 {
