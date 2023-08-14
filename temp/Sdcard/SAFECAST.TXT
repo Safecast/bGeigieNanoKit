@@ -1,0 +1,16 @@
+nm=Rob Oudendijk
+did=2007
+gt=0
+gm=0
+cpmf=334
+cpmn=Cs137
+bqmf=37
+bqmn=Cs137
+al=150
+tz=9
+cn=JPN
+st=0
+ss=0
+sh=100
+sm=0
+cw=60

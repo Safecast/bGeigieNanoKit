@@ -1,0 +1,2 @@
+9600,26,3,2,1,1
+baud,escape,esc#,mode,verb,echo
