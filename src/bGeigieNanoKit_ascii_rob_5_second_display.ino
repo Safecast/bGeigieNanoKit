@@ -286,7 +286,7 @@ void setup()
   }
 
   display.setCursor(50, 7);
-  display.print("Safecast 2023");
+  display.print("Safecast 4");
 
   delay(2000);
   display.clear();
@@ -1231,7 +1231,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.println(strbuffer);
 
   display.setCursor(50, 7);
-  display.print("Safecast 2023");
+  display.print("Safecast 2024");
   //       display.display();
 
 #endif
