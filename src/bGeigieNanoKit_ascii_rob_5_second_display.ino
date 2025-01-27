@@ -286,7 +286,7 @@ void setup()
   }
 
   display.setCursor(50, 7);
-  display.print("Safecast 4");
+  display.print("Safecast 2025");
 
   delay(2000);
   display.clear();
