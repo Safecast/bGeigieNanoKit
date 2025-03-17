@@ -145,7 +145,7 @@ The data is formatted similarly to the NMEA sentences that GPS uses. It begins w
 | HDOP | the Horizontal Dilution of Precision (HDOP), or relative accuracy of the horizontal position | 1.28 |
 |Checksum |  | *6D |
 
-*(For possible updates, see the current [[README.md|https://github.com/Safecast/SafecastBGeigie/blob/master/README.md]] in the technical GitHub repository)*
+*(For possible updates, see the current [README.md](https://github.com/Safecast/SafecastBGeigie/blob/master/README.md) in the technical GitHub repository)*
 
 The data log file name is comprised of three parts: The DID number, the month the log was initiated, and the day the log was initiated. For example, "21080716.LOG" is the data log for unit 2108 from 16 July. Due to space constraints, the file date property is 01/01/2000. However, every line has UTC time date stamp reading.  The log file name may appear to be a day off due to time zone differences.
 
@@ -161,7 +161,7 @@ EXAMPLE:
 
 >$BNRDD,2108,2013-12-06T13:03:58Z,22,2,115,A,3145.7607,N,03510.1975,E,734.90,V,3,908*64
 
-One of the comment lines contains the deadtime. [[Deadtime|http://en.wikipedia.org/wiki/Dead_time]] is "the time after each event during which the system is not able to record another event."  You can find the *ENABLE_LND_DEADTIME compensation formula* in the [[bGeigieNano.ino master repository|https://github.com/Safecast/bGeigieNanoKit/blob/master/bGeigieNano.ino]]. 
+One of the comment lines contains the deadtime. [Deadtime](http://en.wikipedia.org/wiki/Dead_time) is "the time after each event during which the system is not able to record another event."  You can find the *ENABLE_LND_DEADTIME compensation formula* in the [bGeigieNano.ino master repository](https://github.com/Safecast/bGeigieNanoKit/blob/master/bGeigieNano.ino). 
 
 ### Uploading Data to the Safecast Database With the Safecast API
 
@@ -173,7 +173,7 @@ You can learn about how the Safecast API works by visiting the [API documentatio
 
 ### Uploading Data to Other Datasets
 
-Nano data can be submitted to other radiation mapping datasets. For example, the free [[Geiger Bot iOS app|https://sites.google.com/site/geigerbot/]] allows you to upload data to servers other than the [[Safecast API dataset|https://api.safecast.org/]]. To do so, you'll need to configure the app with the details of your device, the particular sensor, data format, connection, and other information.  
+Nano data can be submitted to other radiation mapping datasets. For example, the free [Geiger Bot iOS app](https://sites.google.com/site/geigerbot/) allows you to upload data to servers other than the [Safecast API dataset](https://api.safecast.org/). To do so, you'll need to configure the app with the details of your device, the particular sensor, data format, connection, and other information.  
 
 ### Using Safecast With Mobile Apps 
 
@@ -241,10 +241,10 @@ b. Enter your API key. Change the upload interval as desired, but do not change 
 
 If you experience problems with the display, check all solder joints carefully to verify that you haven't missed a joint, or that you don't have a cold solder joint. These issues can cause the display to act unpredictably.
 
-You can report bugs and other issues at the [[issues page|https://github.com/Safecast/bGeigieNanoKit/issues]] of the Safecast GitHub repository. Volunteer users report problems and bugs in the devices discussion group. 
+You can report bugs and other issues at the [issues page](https://github.com/Safecast/bGeigieNanoKit/issues) of the Safecast GitHub repository. Volunteer users report problems and bugs in the devices discussion group. 
 
 ##### Firmware
-* For the current version of the firmware, see the the .hex file in the [[bGeigieNanoKit repository|https://github.com/Safecast/bGeigieNanoKit]].
+* For the current version of the firmware, see the the .hex file in the [bGeigieNanoKit repository](https://github.com/Safecast/bGeigieNanoKit).
 
 * To learn how to update the firmware of the Fio via FTDI, see the ["How to Update the Firmware" page](https://github.com/Safecast/bGeigieNanoKit/wiki/How-to-Update-the-Firmware) of this wiki.
 
