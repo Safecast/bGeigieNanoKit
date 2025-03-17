@@ -161,7 +161,7 @@ EXAMPLE:
 
 >$BNRDD,2108,2013-12-06T13:03:58Z,22,2,115,A,3145.7607,N,03510.1975,E,734.90,V,3,908*64
 
-One of the comment lines contains the deadtime. [Deadtime](http://en.wikipedia.org/wiki/Dead_time) is "the time after each event during which the system is not able to record another event."  You can find the *ENABLE_LND_DEADTIME compensation formula* in the [bGeigieNano.ino master repository](https://github.com/Safecast/bGeigieNanoKit/blob/master/bGeigieNano.ino). 
+One of the comment lines contains the deadtime. [Deadtime](http://en.wikipedia.org/wiki/Dead_time) is "the time after each event during which the system is not able to record another event."  You can find the *ENABLE_LND_DEADTIME compensation formula* in the [bGeigieNano.ino master repository](https://github.com/Safecast/bGeigieNanoKit/blob/master/src/bGeigieNano.ino). 
 
 ### Uploading Data to the Safecast Database With the Safecast API
 
@@ -177,7 +177,7 @@ Nano data can be submitted to other radiation mapping datasets. For example, the
 
 ### Using Safecast With Mobile Apps 
 
-The official [Safecast app for iOS](https://itunes.apple.com/us/app/safecast/id571167450?mt=8) brings our extensive dataset of radiation measurements to your mobile device, and provides a full toolset to help you perform measurements with your own instrument such as a Geiger or scintillation counter (not included). The app functions as a virtual Geiger counter, allowing you to see your location on a map while displaying radiation readings that have been taken nearby. The app is currently for iOS only. 
+The official (currently not availble)[Safecast app for iOS](https://itunes.apple.com/us/app/safecast/id571167450?mt=8) brings our extensive dataset of radiation measurements to your mobile device, and provides a full toolset to help you perform measurements with your own instrument such as a Geiger or scintillation counter (not included). The app functions as a virtual Geiger counter, allowing you to see your location on a map while displaying radiation readings that have been taken nearby. The app is currently for iOS only. 
 
 In addition, the Safecast Drive app [Android](https://github.com/Safecast/bGeigie-Drive) enables you to:
 
