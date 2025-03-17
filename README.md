@@ -1,4 +1,4 @@
-## bGeigie Nano Kit Operating Instructions (March 2017)
+## bGeigie Nano Kit Operating Instructions (Updated March 2025)
 
 # Table of Contents
 
@@ -114,7 +114,7 @@ When averaging readings from two different Nanos, you should only compare long-t
 
 ### Data Log
 
-In recording mode, the data log file writes to the micro-SD card. A key to the fields in the Data Log is available in the [[bGeigie library README.md by fakufaku|https://github.com/Safecast/SafecastBGeigie]]. 
+In recording mode, the data log file writes to the micro-SD card. A key to the fields in the Data Log is available in the [bGeigie library README.md by fakufaku](https://github.com/Safecast/SafecastBGeigie). 
 
 The data is formatted similarly to the NMEA sentences that GPS uses. It begins with a dollar sign ($) and ends with an asterisk (*). A checksum follows the star.
 
@@ -179,36 +179,11 @@ Nano data can be submitted to other radiation mapping datasets. For example, the
 
 The official [Safecast app for iOS](https://itunes.apple.com/us/app/safecast/id571167450?mt=8) brings our extensive dataset of radiation measurements to your mobile device, and provides a full toolset to help you perform measurements with your own instrument such as a Geiger or scintillation counter (not included). The app functions as a virtual Geiger counter, allowing you to see your location on a map while displaying radiation readings that have been taken nearby. The app is currently for iOS only. 
 
-In addition, the Safecast Drive app for [iOS](https://itunes.apple.com/us/app/safecast-drive/id996229604?mt=8) and [Android](https://play.google.com/store/apps/details?id=io.wizkers.safecast.drive&hl=en) enables you to:
+In addition, the Safecast Drive app [Android](https://github.com/Safecast/bGeigie-Drive) enables you to:
 
-- Connect with your bGeigieNano (if you have the Bluetooth LE module installed), record data, and upload the data to Safecast directly, without removing your MicroSD card
+- Connect with your bGeigieNano (if you have the [bGeigeCast](https://bgeigiezen.safecast.jp/store-2/bgeigiecast-build-for-bgeigienano/) module installed), record data, and upload the data to Safecast directly, without removing your MicroSD card
 - Access previous logs and update their status
 
-### Troubleshooting
-
-#### Troubleshooting the iSafecast Geiger Bot App for iOS
-
-In principle, the app's analog click counting is simple; it looks for samples in the recording buffer from the OS that exceed threshold X.
-
-However, a variety of factors can affect it. App author Nick Dolezal recommends taking the following steps:
-
-1. Verifying the output of the pulse with an oscilloscope (if you don't have an oscilloscope, you might want to buy an inexpensive DSO Nano online)
-2. Ensuring that the voltage is in the [consumer line-level range](http://en.wikipedia.org/wiki/Line_level)
-3. Ensuring that the pulse width (duration) is at least [two samples at 44.1 khz](http://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem)
-4. Verifying that the pin-out is correct, both at the unit and at the end of the cable. The cable or device must also short mic and ground with a resistor of a certain impedance to be detected by the iPhone. If you overdo that, or if it's done with the cable and unit, you may not see any input. 
-
-Software factors that may affect input include: 
-
-- App settings
-- OS settings (such as accessibility features)
-- iOS 7 microphone permissions
-
-Hardware factors that may affect output include:
-
-- Differing impedance in electronics or cables
-- Non-voltage regulated output + low battery
-- Noise from external power (interferes with gamma spectroscopy)
-- Configuration settings
 
 **Common Issues**
 
@@ -311,8 +286,8 @@ To keep the Onyx™ in good condition, handle it with care, and observe the foll
 
 #### Resources and Support
 
-- [Nano catch-all landing page](http://blog.safecast.org/bgeigie-nano/)
+- [Nano catch-all landing page](https://safecast.org/bgeigie-nano/)
 
-- [Safecast website](http://blog.safecast.org/) - articles, news, notices, API uploads, crowdsourced radiation data and maps, and more
+- [Safecast website](https://safecast.org/) - articles, news, notices, API uploads, crowdsourced radiation data and maps, and more
 
 - [Safecast Devices Discussions and Support group](https://groups.google.com/forum/?hl=en#!forum/safecast-devices) 
