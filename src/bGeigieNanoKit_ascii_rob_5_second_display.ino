@@ -1231,7 +1231,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   display.println(strbuffer);
 
   display.setCursor(50, 7);
-  display.print("Safecast 2024");
+  display.print("Safecast 2025");
   //       display.display();
 
 #endif
