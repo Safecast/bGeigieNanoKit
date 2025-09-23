@@ -5,22 +5,21 @@
 // bGeigie Nano definitions
 //
 
-#define NANO_DEVICE_ID        0000
-#define NANO_VERSION       "1.4.5"
+#define NANO_DEVICE_ID        1367 //20250921 Karl Chan
+#define NANO_VERSION       "1.5.8 K1"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37
 
-//  
+#define NANO_CONFIGFILE   "SAFECAST.TXT"
+//
 // Enable or Disable features
 //
 
 #define ENABLE_DEBUG             0
 #define ENABLE_DIAGNOSTIC        0
-#define ENABLE_SLEEPMODE         0
 #define ENABLE_SSD1306           1
 #define ENABLE_SOFTGPS           1
-#define ENABLE_STATIC_GPS        0
 #define ENABLE_HARDWARE_COUNTER  0
 #define ENABLE_OPENLOG           1
 #define ENABLE_WAIT_GPS_FOR_LOG  1
@@ -34,6 +33,7 @@
 #define ENABLE_GEIGIE_SWITCH     1 // switch between bGeigie and xGeigie type
 #define ENABLE_NANOKIT_PIN       1 // use the nano kit configuration
 #define ENABLE_NANOPCBKIT_PIN    1 // use the nano pcb kit configuration
+#define ENABLE_100M_TRUNCATION   0 // for JP
 
 #if ENABLE_SSD1306 // high memory usage (avoid logs)
 #undef ENABLE_DEBUG // disable debug log output
@@ -45,7 +45,7 @@
 
 #if ENABLE_NANOKIT_PIN
 #if ENABLE_NANOPCBKIT_PIN
-  #warning NANO PCB KIT with OLED screen used !
+  // #warning NANO PCB KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
   #define OLED_CLK 10
   #define OLED_DATA 9
@@ -58,7 +58,7 @@
   #define OPENLOG_TX_PIN 5
   #define OPENLOG_RST_PIN 4
   #define LOGALARM_LED_PIN A4
-  #define CUSTOM_FN_PIN 3
+  #define CUSTOM_FN_PIN A5 //Mikele setup A3 rob setup A5 normal setup D3
 #else
   #warning NANO KIT with OLED screen used !
   #define OLED_SPI_MODE // SPI mode enabled
@@ -104,7 +104,12 @@
 // 0 = D2, 1 = D3
 #define INTERRUPT_COUNTER_PIN 0
 
+// for detecting shock if shock sensor is connected on D3 interupt 1
+#define SHOCKPIN 1
+
 // bGeigie <-> xGeigie switch pin
+//Rob and Pieter versions with old board are A7 normal is A5
+// 20250917 1367 Karl is using A5
 #define GEIGIE_TYPE_PIN A5
 #define GEIGIE_TYPE_THRESHOLD 500
 
@@ -114,5 +119,16 @@
 #define VOLTAGE_PIN A0
 #define VOLTAGE_R1 9100
 #define VOLTAGE_R2 1000
+// 20250920 Karl Chan Internal reference voltage 1.1V
+#define INTERNAL_REF_VOLTAGE 1.1
+#define LITHIUM_REF_VOLTAGE 4.1
+#define LOW_BATTERY_LEVEL 30
+
+// 20250916 Karl Chan Touch PIN
+#define TOUCH_PIN A6
+#define PROXY_SAMPLE 10
+// 0V - 5V into 0 ~ 1023
+// 5V / 1023 * 400 = 1.955V
+#define TOUCH_THRESHOLD 10
 
 #endif
