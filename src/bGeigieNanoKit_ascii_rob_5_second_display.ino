@@ -30,6 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// 2028-09-23 V1.5.8c Always show GPS status
 // 2025-09-21 V1.5.8b Housekeeping, commented out unused declaired
 // 2025-09-21 V1.5.8a DEFAULT YEAR == 2025, auto update from GPS 
 // 2025-09-20 V1.5.8 Fixed display using new SSD1306 library cleareol(), removed setup display.clear and loop display,clear
@@ -407,7 +408,6 @@ void loop()
     while (gpsSerial.available())
     {
       char c = gpsSerial.read();
-
 #else
     while (Serial.available())
     {
@@ -838,6 +838,26 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
     }
   }
 }
+void display_gps(TinyGPS &gps, unsigned short sat)
+{
+if (!gps.status())
+    {
+      display.setCursor(92, 1);
+      //sprintf_P(strbuffer, PSTR("No GPS")); // 20250920 Karl Chan
+      //display.println(strbuffer);
+      display.clearToEOL();
+      display.print(String("NO GPS"));
+    }
+    else
+    {
+      display.setCursor(110, 1);
+      sprintf(strbuffer, "%2d", sat);
+      display.clearToEOL(); // 20250920 Karl Chan
+      display.print(strbuffer + String("^"));
+      //sprintf_P(strbuffer, PSTR("^"));
+      //display.println(strbuffer);
+    }
+}
 /* generate log result line */
 bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned long cpm, unsigned long cpb)
 {
@@ -857,17 +877,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   memset(lon, 0, BUFFER_SZ);
   memset(strbuffer, 0, STRBUFFER_SZ);
 
-  // get GPS date
-  gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
-  if (TinyGPS::GPS_INVALID_AGE == age)
-  {
-    year = DEFAULT_YEAR, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
-  }
-  // 20250921 Karl Chan, set the DEFAULT year regardless the GPS state
-  DEFAULT_YEAR = year;
-  
-  // get GPS position, altitude and speed
-  gps.get_position(&x, &y, &age);
+
   if (!gps.status())
   {
     gps_status = VOID;
@@ -876,6 +886,18 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   {
     gps_status = AVAILABLE;
   }
+
+  // get GPS date
+  gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
+  if (TinyGPS::GPS_INVALID_AGE == age)
+  {
+    year = DEFAULT_YEAR, month = 0, day = 0, hour = 0, minute = 0, second = 0, hundredths = 0;
+  }
+  // 20250921 Karl Chan, set the DEFAULT year regardless the GPS state
+  DEFAULT_YEAR = year;
+    
+  // get GPS position, altitude and speed
+  gps.get_position(&x, &y, &age);
   faltitude = gps.f_altitude();
   fspeed = gps.f_speed_kmph();
   nbsat = gps.satellites();
@@ -1010,6 +1032,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
     // Display SD, GPS and Geiger states
     display.set1X();
+    // 20250923 Karl Chan, always display number of GPS
+    display_gps(gps, nbsat);
+    /*
     if (!gps.status())
     {
       display.setCursor(92, 1);
@@ -1026,7 +1051,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       //sprintf_P(strbuffer, PSTR("^"));
       //display.println(strbuffer);
     }
-
+    */
+    
     // Display uSv/h
     // display.setCursor(0, offset+16); // textsize*8
     display.setCursor(0, 2); // textsize*8
@@ -1078,13 +1104,17 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
       if (gps.status())
       {
         dtostrf(faltitude, 0, 0, strbuffer);
+        display.setCursor(122 - (strlen(strbuffer) * 6), 3); // textsize*8
+        display.print(strbuffer + String("m"));  // 20250920 Karl Chan
       }
       else
       {
-        sprintf_P(strbuffer, PSTR("--"));
+        //sprintf_P(strbuffer, PSTR("--"));
+        display.setCursor(110, 3);
+        display.print("--");
       }
-      display.setCursor(122 - (strlen(strbuffer) * 6), 3); // textsize*8
-      display.print(strbuffer + String("m"));  // 20250920 Karl Chan
+      //display.setCursor(122 - (strlen(strbuffer) * 6), 3); // textsize*8
+      //display.print(strbuffer + String("m"));  // 20250920 Karl Chan
       //display.println("m");
     }
   }
@@ -1106,6 +1136,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
     // Display uSv/h
     render_measurement(cpb, cpm, false, offset);
+
+    // 20250923 Karl Chan, always display number of GPS
+    display_gps(gps, nbsat);
 
     // Cleanup temp buffer
     memset(strbuffer1, 0, sizeof(strbuffer1));
