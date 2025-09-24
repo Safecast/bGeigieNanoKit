@@ -840,7 +840,7 @@ void render_measurement(unsigned long value5sec, unsigned long value, bool is_cp
 }
 void display_gps(TinyGPS &gps, unsigned short sat)
 {
-if (!gps.status())
+if (!isGPSOK(gps))
     {
       display.setCursor(92, 1);
       //sprintf_P(strbuffer, PSTR("No GPS")); // 20250920 Karl Chan
@@ -877,8 +877,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   memset(lon, 0, BUFFER_SZ);
   memset(strbuffer, 0, STRBUFFER_SZ);
 
-
-  if (!gps.status())
+  //if (!gps.status())
+  /*
+   if (!isGPSOK(gps)) // 20250924 Karl Chan, need 3 to get a lock
   {
     gps_status = VOID;
   }
@@ -886,8 +887,10 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   {
     gps_status = AVAILABLE;
   }
-
-  // get GPS date
+  */
+   isGPSOK(gps);
+ 
+   // get GPS date
   gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
   if (TinyGPS::GPS_INVALID_AGE == age)
   {
@@ -953,7 +956,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
 #if ENABLE_SSD1306
   // compute distance
-  if (gps.status())
+  //if (!gps.status())
+  if (isGPSOK(gps)) // 20250924 Karl Chan, need 3 to get a lock
   {
     // int trigger_dist = 25;
     unsigned long int trigger_dist = 25; // 20250921 Karl Chan
@@ -1010,7 +1014,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
 
     // Display Alarm LED if GPS is locked and Radiation is valid
 #ifdef LOGALARM_LED_PIN
-    if ((geiger_status == AVAILABLE) && (gps.status()))
+    //if ((geiger_status == AVAILABLE) && (gps.status()))
+    // 20250924 Karl Chan
+    if (isGPSOK(gps))
     {
       if (openlog_ready)
       {
@@ -1101,7 +1107,8 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     else
     {
       // Display altidude
-      if (gps.status())
+      //if (!gps.status())
+      if (isGPSOK(gps)) // 20250924 Karl Chan, need 3 to get a lock
       {
         dtostrf(faltitude, 0, 0, strbuffer);
         display.setCursor(122 - (strlen(strbuffer) * 6), 3); // textsize*8
@@ -1457,6 +1464,24 @@ int battery_level(float battery_voltage)
 
   return (int)(battery_voltage / LITHIUM_REF_VOLTAGE * 100);
 
+}
+
+// 20250924 Karl Chan, GPS got lock?
+bool isGPSOK(TinyGPS &g)
+{
+  // 20250924 Karl Chan, need 3 to get a lock
+    //if (!gps.status())
+  if ((g.satellites() < 4) || (g.hdop() == g.GPS_INVALID_HDOP)) 
+  {
+    gps_status = VOID;
+    return false;
+  }    
+  else
+  {
+    gps_status = AVAILABLE;
+    return true;
+  }
+    
 }
 
 // 20250921 Karl Chan, Wake Display
