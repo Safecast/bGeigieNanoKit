@@ -6,7 +6,7 @@
 //
 
 #define NANO_DEVICE_ID        1367 //20250921 Karl Chan
-#define NANO_VERSION       "1.5.8c"
+#define NANO_VERSION       "1.5.8d"
 #define NANO_HEADER        "BNRDD"
 #define NANO_CPM_FACTOR        334
 #define NANO_BQM2_FACTOR        37

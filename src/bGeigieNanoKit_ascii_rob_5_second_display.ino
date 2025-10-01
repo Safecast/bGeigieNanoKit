@@ -30,7 +30,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// 2028-09-23 V1.5.8c Always show GPS status
+// 2025-10-01 V1.5.8D Added Alarm for CPM > predefined value
+// 2025-09-23 V1.5.8c Always show GPS status
 // 2025-09-21 V1.5.8b Housekeeping, commented out unused declaired
 // 2025-09-21 V1.5.8a DEFAULT YEAR == 2025, auto update from GPS 
 // 2025-09-20 V1.5.8 Fixed display using new SSD1306 library cleareol(), removed setup display.clear and loop display,clear
@@ -873,6 +874,9 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   char WE = 'E';
   static int toggle = 0;
 
+  // 20251001 Karl Chan, Display Alarm text
+  String str_AlarmText = "";
+
   memset(lat, 0, BUFFER_SZ);
   memset(lon, 0, BUFFER_SZ);
   memset(strbuffer, 0, STRBUFFER_SZ);
@@ -1135,10 +1139,12 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
     if (cpm > config.alarm_level)
     {
       digitalWrite(LOGALARM_LED_PIN, HIGH);
+      str_AlarmText = "Alarm:CPM>" + String(cpm);
     }
     else
     {
       digitalWrite(LOGALARM_LED_PIN, LOW);
+      str_AlarmText = "";
     }
 
     // Display uSv/h
@@ -1367,7 +1373,7 @@ bool gps_gen_timestamp(TinyGPS &gps, char *buf, unsigned long counts, unsigned l
   //analogReference(DEFAULT);
   //String s = String(float(analogRead(VOLTAGE_PIN)*(INTERNAL_REF_VOLTAGE / 1024))*10);
 
-  display.print(read_voltage(VOLTAGE_PIN) + String("V ") + battery_level(read_voltage(VOLTAGE_PIN)) + String("%"));
+  display.print(read_voltage(VOLTAGE_PIN) + String("V ") + /*battery_level(read_voltage(VOLTAGE_PIN)) + String("% ") +*/ str_AlarmText);
 
   display.setCursor(50, 7);
   display.print("Safecast " + String(DEFAULT_YEAR));
